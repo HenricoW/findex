@@ -4,6 +4,10 @@
       "main": "src/fitoken/main.mo",
       "type": "motoko"
     },
+    "utoken": {
+      "main": "src/DIP20/utoken.mo",
+      "type": "motoko"
+    },
     "fitoken_assets": {
       "dependencies": [
         "fitoken"
