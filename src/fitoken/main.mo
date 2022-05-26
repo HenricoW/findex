@@ -60,6 +60,7 @@ shared(msg) actor class FiToken(
             #Other: Text;
             #BlockUsed;
             #AmountTooSmall;
+            #InvalidAmount;
         };
     };
 
@@ -246,30 +247,15 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    public shared(msg) func mint(to: Principal, value: Nat): async TxReceipt {
-        if(msg.caller != owner_) {
-            return #Err(#Unauthorized);
-        };
-        let to_balance = _balanceOf(to);
-        totalSupply_ += value;
-        balances.put(to, to_balance + value);
-        ignore addRecord(
-            msg.caller, "mint",
-            [
-                ("to", #Principal(to)),
-                ("value", #U64(u64(value))),
-                ("fee", #U64(u64(0)))
-            ]
-        );
-        txcounter += 1;
-        return #Ok(txcounter - 1);
-    };
-
     let uToken = actor(underlyingId): actor {
-        transferFrom: (Principal, Principal, Nat) -> async TxReceipt
+        transferFrom: (Principal, Principal, Nat) -> async TxReceipt;
+        transfer: (Principal, Nat) -> async TxReceipt;
+        balanceOf: (Principal) -> async Nat;
     };
 
     public shared(msg) func mintfi(uAmount: Nat): async TxReceipt {
+      // check if mint allowed { main pj cannister }
+
         let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), uAmount);
         switch(transferRx) {
             case(#Ok val)   { };
@@ -296,21 +282,41 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    public shared(msg) func burn(amount: Nat): async TxReceipt {
-        let from_balance = _balanceOf(msg.caller);
-        if(from_balance < amount) {
+    public shared(msg) func redeem(uAmount: Nat): async TxReceipt {
+      // check if redeem allowed { main pj cannister }
+
+      // not needed but extra safety check
+      let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
+      if(uAmount > canisterBal) {
+            return #Err(#InvalidAmount);
+        };
+      
+      // call fn{ accrueInterest() }
+
+      let fiAmount = uAmount * ONE / exchangeRateMantissa;
+      let fi_balance = _balanceOf(msg.caller);
+      if(fiAmount > fi_balance) {
             return #Err(#InsufficientBalance);
         };
-        totalSupply_ -= amount;
-        balances.put(msg.caller, from_balance - amount);
+      
+      let transferRx = await uToken.transfer(msg.caller, uAmount);
+        switch(transferRx) {
+            case(#Ok val)   { };
+            case(#Err errType)  { return #Err(errType) };
+        };
+
+      totalSupply_ -= fiAmount;
+        balances.put(msg.caller, fi_balance - fiAmount);
+
         ignore addRecord(
-            msg.caller, "burn",
+            msg.caller, "redeem",
             [
                 ("from", #Principal(msg.caller)),
-                ("value", #U64(u64(amount))),
+                ("value", #U64(u64(fiAmount))),
                 ("fee", #U64(u64(0)))
             ]
         );
+
         txcounter += 1;
         return #Ok(txcounter - 1);
     };

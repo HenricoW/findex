@@ -54,7 +54,7 @@ echo
 echo == Initial setting for utoken canister
 echo
 
-dfx canister call fitoken setFeeTo "$FEE_PUBLIC_KEY"
+dfx canister call fitoken setFeeTo "($FEE_PUBLIC_KEY)"
 dfx canister call fitoken setFee "(10_000_000)"
 echo Verifying fee update
 dfx canister call fitoken getTokenFee
@@ -74,14 +74,17 @@ echo FeeTo = $( \
 )
 
 echo
+echo
+echo
+echo ===================== Supply tests =====================
+echo
 echo == Alice grants FiToken permission to spend 500 of her utokens, should succeed.
-echo
 eval dfx canister call utoken approve "'($FITOKENID, 500_000_000)'"
+echo
 
-echo
-echo == Mint fitokens \(exchanging 300 utokens\) for Alice, should be fine.
-echo
+echo == Alice mints fitokens \(exchanging 300 utokens\), should succeed.
 eval dfx canister call fitoken mintfi "300_000_000"
+echo
 
 echo New balances:
 echo Alice uToken Bal = $( \
@@ -101,6 +104,38 @@ echo
 echo Fee holder uToken Bal = $( \
     eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'" \
 )
+echo
+
+
+echo
+echo
+echo
+echo ===================== Redeem tests =====================
+echo
+echo == Alice redeems fitokens \(for 100 utokens\), should succeed.
+eval dfx canister call fitoken redeem "100_000_000"
+echo
+
+echo New balances:
+echo Alice uToken Bal = $( \
+    eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
+)
+echo Alice FiToken Bal = $( \
+    eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
+)
+echo
+echo FiToken canister uToken Bal = $( \
+    eval dfx canister call utoken balanceOf "'($FITOKENID)'" \
+)
+echo FiToken Total Supply = $( \
+    eval dfx canister call fitoken totalSupply \
+)
+echo
+
+
+echo
+echo == Alice redeems fitokens \(for 500 utokens\), should not succeed.
+eval dfx canister call fitoken redeem "500_000_000"
 echo
 
 # echo
