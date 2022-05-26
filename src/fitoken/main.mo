@@ -21,6 +21,7 @@ import Text "mo:base/Text";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Cap "../cap/Cap";
 import Root "../cap/Root";
+import Bool "mo:base/Debug";
 
 // import UToken "utoken"
 
@@ -29,7 +30,6 @@ shared(msg) actor class FiToken(
     _name: Text,
     _symbol: Text,
     _decimals: Nat8,
-    // _totalSupply: Nat,
     _owner: Principal,
     _underlying: Text,
     _initialExchangeRateMantissa: Nat,
@@ -64,6 +64,7 @@ shared(msg) actor class FiToken(
         };
     };
 
+    public stable var isFiToken: Bool = true;
     private stable var owner_ : Principal = _owner;
     private stable var logo_ : Text = _logo;
     private stable var name_ : Text = _name;
@@ -246,6 +247,8 @@ shared(msg) actor class FiToken(
         txcounter += 1;
         return #Ok(txcounter - 1);
     };
+
+    public query func isFiToken(): Bool { isFiToken };
 
     let uToken = actor(underlyingId): actor {
         transferFrom: (Principal, Principal, Nat) -> async TxReceipt;

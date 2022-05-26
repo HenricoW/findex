@@ -8,17 +8,16 @@
       "main": "src/DIP20/utoken.mo",
       "type": "motoko"
     },
+    "fitroller": {
+      "main": "src/fitoken/fitroller.mo",
+      "type": "motoko"
+    },
     "fitoken_assets": {
-      "dependencies": [
-        "fitoken"
-      ],
+      "dependencies": ["fitoken"],
       "frontend": {
         "entrypoint": "src/fitoken_assets/src/index.html"
       },
-      "source": [
-        "src/fitoken_assets/assets",
-        "dist/fitoken_assets/"
-      ],
+      "source": ["src/fitoken_assets/assets", "dist/fitoken_assets/"],
       "type": "assets"
     }
   },
