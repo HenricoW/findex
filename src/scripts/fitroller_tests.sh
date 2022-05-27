@@ -67,6 +67,40 @@ echo == Add a DIP20 to the supported markets, should not succeed.
 eval dfx canister call fitroller _supportMarket "'($UTOKENID)'"
 echo
 HOME=$FEE_HOME
-echo == Add an FiToken to the supported markets from non Admin Account, should not succeed.
+echo == Add an FiToken to the supported markets from non-Admin Account, should not succeed.
 eval dfx canister call fitroller _supportMarket "'($FITOKENID)'"
+
+echo
+echo
+echo
+echo ===================== User functions tests =====================
+echo
+echo ===================== enterMarkets =====================
+echo
+HOME=$ALICE_HOME
+echo == Read user asset data, should be empty.
+eval dfx canister call fitroller getAccountAssets "'($ALICE_PUBLIC_KEY)'"
+echo
+echo == Read token market data, should be empty.
+eval dfx canister call fitroller getMarketUsers "'($FITOKENID)'"
+echo
+echo == Alice enters market for an FiToken, should succeed.
+eval dfx canister call fitroller enterMarkets "'(vec {$FITOKENID})'"
+echo
+echo == Alice enters market for same FiToken, should not succeed.
+eval dfx canister call fitroller enterMarkets "'(vec {$FITOKENID})'"
+echo
+echo == Fee holder enters market for an FiToken, should succeed.
+HOME=$FEE_HOME
+eval dfx canister call fitroller enterMarkets "'(vec {$FITOKENID})'"
+echo
+HOME=$ALICE_HOME
+echo == Alice enters market for an unsupported token, should not succeed.
+eval dfx canister call fitroller enterMarkets "'(vec {$UTOKENID})'"
+echo
+echo == Read Alice\'s asset entered, should be populated.
+eval dfx canister call fitroller getAccountAssets "'($ALICE_PUBLIC_KEY)'"
+echo
+echo == Read token\'s market users, should be populated.
+eval dfx canister call fitroller getMarketUsers "'($FITOKENID)'"
 echo
