@@ -3,21 +3,68 @@ import Types "../utils/types";
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Bool "mo:base/Debug";
+import Iter "mo:base/Iter";
+import Buffer "mo:base/Buffer";
 
 import FiTrollerMod "../modules/fitroller_mod"
 
 shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
     private stable var txCounter = 0;
-    func increaseTxCounter() : async FiTrollerMod.TxReceipt {
-        let txId = txCounter;
-        txCounter += 1;
-        #Ok(txId);
-    };
+    // func increaseTxCounter() : async FiTrollerMod.TxReceipt {
+    //     let txId = txCounter;
+    //     txCounter += 1;
+    //     #Ok(txId);
+    // };
 
     let ftrlr = FiTrollerMod.Fitroller(msg.caller);
 
     // Add multiple markets to a user's liquidity calculations
-    public shared(msg) func enterMarkets(fiTokens: [Principal]) : async [FiTrollerMod.TxStatus] { [#succeeded] };
+    public shared(msg) func enterMarkets(fiTokens: [Principal]) : async [FiTrollerMod.TxStatus] {
+        let results = Buffer.Buffer<FiTrollerMod.TxStatus>(1);
+
+        label l for(token in fiTokens.vals()) {
+            // is this market supported?
+            switch(ftrlr.cdata.markets.get(token)) {
+                case null { results.add(#failed) };                     // market not supported
+                case (?market) {
+                    // was this market entered by this user already?
+                    switch(market.accountMembership.get(msg.caller)){
+                        case (?record) {
+                            results.add(#failed);                       // user already entered this market
+                            continue l;
+                        };
+                        case null {
+                            market.accountMembership.put(msg.caller, true);     // update market's accounts entered. Update by reference? Yes
+                        };
+                    };
+
+                    // update user's markets entered list
+                    let added = await ftrlr.addAssetToAccount(msg.caller, token);
+
+                    results.add(#succeeded);
+                };
+            };
+        };
+
+        results.toArray()
+    };
+
+    // helpers
+    public query func getAccountAssets(user: Principal): async [Principal] {
+        switch(ftrlr.cdata.accountAssets.get(user)){
+            case null { return [] };
+            case (?enteredList) { return enteredList.toArray() };
+        };
+    };
+
+    public query func getMarketUsers(fitoken: Principal): async [(Principal, Bool)] {
+        switch(ftrlr.cdata.markets.get(fitoken)) {
+            case null { return [] };
+            case (?market) {
+                return (Iter.toArray(market.accountMembership.entries()))
+            };
+        };
+    };
 
     // Remove a single market from a user's liquidity calculations
     public shared(msg) func exitMarket(fiToken: Principal) : async FiTrollerMod.TxStatus { #succeeded };

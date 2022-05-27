@@ -95,17 +95,32 @@ module {
         private var maxCollateralFactor = 90_000_000;       // 90 %
         private var minCollateralFactor = 40_000_000;       // 40 %
 
+        // Add support for a new market to market data and market list
         public func addMarket(fitoken: Principal): async TxStatus {
             cdata.markets.put(
                 fitoken, 
                 { 
-                    isListed = true; 
+                    isListed = true;                        // TODO: Remove, redundant for non-Solidity map
                     collateralFactorMantissa = defaultCollateralFactor; 
                     accountMembership = HashMap.HashMap<Principal, Bool>(1, Principal.equal, Principal.hash);
                 }
             );
 
             cdata.allMarkets.add(fitoken);
+
+            #succeeded
+        };
+
+        // Add market to be used as collateral for a user
+        public func addAssetToAccount(user: Principal, fitoken: Principal): async TxStatus {
+            switch(cdata.accountAssets.get(user)){
+                case null {
+                    let tmpBuffer = Buffer.Buffer<Principal>(1);
+                    tmpBuffer.add(fitoken);
+                    cdata.accountAssets.put(user, tmpBuffer);
+                };
+                case (?aList) { aList.add(fitoken); };
+            };
 
             #succeeded
         };
