@@ -5,6 +5,7 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Bool "mo:base/Debug";
 import Types "../utils/types";
+import Buffer "mo:base/Buffer";
 
 module {
     public type Interface = actor {
@@ -44,9 +45,6 @@ module {
         closeFactorMantissa     : Nat;
         // max number of markets a user can enter
         maxAssets   : Nat8;
-
-        // List of all supported fitoken markets
-        allMarkets  : [Principal];
     };
 
     public type Market = {
@@ -88,9 +86,9 @@ module {
             var oracle              = Principal.fromText("aaaaa-aa");
             var closeFactorMantissa = 0;
             var maxAssets           = 2;
-            var accountAssets       = HashMap.HashMap<Principal, [Principal]>(1, Principal.equal, Principal.hash);
+            var accountAssets       = HashMap.HashMap<Principal, Buffer.Buffer<Principal>>(1, Principal.equal, Principal.hash);
             var markets             = HashMap.HashMap<Principal, Market>(1, Principal.equal, Principal.hash);
-            var allMarkets          = [];
+            var allMarkets          = Buffer.Buffer<Principal>(1);
         };
 
         private var defaultCollateralFactor = 70_000_000;   // 70 %
@@ -107,6 +105,8 @@ module {
                 }
             );
 
+            cdata.allMarkets.add(fitoken);
+
             #succeeded
         };
 
@@ -115,7 +115,6 @@ module {
             oracle                  = cdata.oracle;
             closeFactorMantissa     = cdata.closeFactorMantissa;
             maxAssets               = cdata.maxAssets;
-            allMarkets              = cdata.allMarkets;
         };
 
         public func getStableMarket(market: Market) : {
@@ -137,9 +136,8 @@ module {
             var closeFactorMantissa     : Nat;
             var maxAssets   : Nat8;
             // user accounts => fiToken - the markets a user has entered
-            var accountAssets           : HashMap.HashMap<Principal, [Principal]>;
-
-            var allMarkets  : [Principal];
+            var accountAssets           : HashMap.HashMap<Principal, Buffer.Buffer<Principal>>;
+            var allMarkets  : Buffer.Buffer<Principal>;     // List of all supported fitoken markets
 
             // market data for each fiToken
             var markets     : HashMap.HashMap<Principal, Market>; 
