@@ -64,7 +64,6 @@ shared(msg) actor class FiToken(
         };
     };
 
-    public stable var isFiToken: Bool = true;
     private stable var owner_ : Principal = _owner;
     private stable var logo_ : Text = _logo;
     private stable var name_ : Text = _name;
@@ -248,7 +247,7 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    public query func isFiToken(): Bool { isFiToken };
+    public query func isFiToken(): async Bool { true };
 
     let uToken = actor(underlyingId): actor {
         transferFrom: (Principal, Principal, Nat) -> async TxReceipt;

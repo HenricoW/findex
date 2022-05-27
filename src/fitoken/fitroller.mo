@@ -43,12 +43,17 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
         let fiTkn = actor(Principal.toText(fiToken)): actor {
             isFiToken: () -> async Bool;
         };
-        let isFiToken = await fiTkn.isFiToken();
-        if(not isFiToken) { return #Err(#Other("Not an fiToken")) };
+        try {
+            let isFiToken = await fiTkn.isFiToken();
+        } catch error {
+            return #Err(#Other("Not an fiToken"))
+        };
 
         // is it already supported?
-        let market = Types.unwrap(ftrlr.cdata.markets.get(fiToken));
-        if(market.isListed) { return #Err(#Other("Market already listed")) };
+        switch(ftrlr.cdata.markets.get(fiToken)) {
+            case null {  };
+            case (?mkt_) { return #Err(#Other("Market already listed")) };
+        };
 
         // add it to the supported markets Mapping and allMarkets list
         let isMarketAdded = await ftrlr.addMarket(fiToken);
@@ -56,6 +61,8 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
             case (#succeeded) { return #Ok(0) };
             case (_) { return #Err(#Other("Failed to add market")) };
         };
+
+        #Ok(0)
     };
 
     // _setPriceOracle : (oracle_id: Principal) -> async TxReceipt;
