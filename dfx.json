@@ -12,6 +12,10 @@
       "main": "src/fitoken/fitroller.mo",
       "type": "motoko"
     },
+    "interestRate": {
+      "main": "src/fitoken/BaseInterestRateModel.mo",
+      "type": "motoko"
+    },
     "fitoken_assets": {
       "dependencies": ["fitoken"],
       "frontend": {
