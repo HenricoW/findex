@@ -47,12 +47,12 @@ RESERVES=5_000
 eval dfx canister call interestRate utilizationRate "'($CASH, $BORROWS, $RESERVES)'"
 
 echo
-echo == test borrow rate, should yield 18% \(3,424 per minute\) in mantissa \(10e8\).
+echo == test borrow rate, should yield 34 per minute \(18% p.a.\)
 eval dfx canister call interestRate getBorrowRate "'($CASH, $BORROWS, $RESERVES)'"
 # URATE=$(dfx canister call interestRate getBorrowRate "($CASH, $BORROWS, $RESERVES)")
 # eval $URATE * 365 * 24 * 60
 echo
-echo == test supply rate, should yield 3.6% \(685 per minute\) in mantissa \(10e8\).
+echo == test supply rate, should yield 6 per minute \(3.6% p.a.\)
 RESERVE_FACOTR=60_000_000
 eval dfx canister call interestRate getSupplyRate "'($CASH, $BORROWS, $RESERVES, $RESERVE_FACOTR)'"
 echo
@@ -61,10 +61,10 @@ echo == test utilizationRate, should yield 0%.
 BORROWS=0
 eval dfx canister call interestRate utilizationRate "'($CASH, $BORROWS, $RESERVES)'"
 echo
-echo == test borrow rate, should yield 6% \(1,141 per minute\) in mantissa \(10e8\).
+echo == test borrow rate, should yield 11 per minute \(6% p.a.\)
 eval dfx canister call interestRate getBorrowRate "'($CASH, $BORROWS, $RESERVES)'"
 echo
-echo == test supply rate, should yield 0% \(0 per minute\) in mantissa \(10e8\).
+echo == test supply rate, should yield 0 per minute \(0% p.a.\)
 RESERVE_FACOTR=60_000_000
 eval dfx canister call interestRate getSupplyRate "'($CASH, $BORROWS, $RESERVES, $RESERVE_FACOTR)'"
 echo

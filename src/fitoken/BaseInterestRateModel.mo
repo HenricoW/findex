@@ -1,6 +1,7 @@
 import Nat "mo:base/Nat";
 import Float "mo:base/Float";
 import Bool "mo:base/Debug";
+import Int "mo:base/Int";
 import IiRateModel "./IInterestRateModel"
 
 actor class IntRateModel(annualBaseRate: Float, annualSlopeRate: Float) : async IiRateModel.Interface {
@@ -20,7 +21,11 @@ actor class IntRateModel(annualBaseRate: Float, annualSlopeRate: Float) : async 
     public func getBorrowRate(cash: Nat, borrows: Nat, reserves: Nat) : async Nat {
         let utilRate = await utilizationRate(cash, borrows, reserves);
 
-        irate.baseRatePerMin + ( utilRate * irate.slopeRatePerMin / irate.ONE )
+        let slopeF = Float.fromInt(irate.slopeRatePerMin); 
+        let oneF = Float.fromInt(irate.ONE);
+        let slopeRate = Float.fromInt(utilRate) * slopeF / oneF;
+
+        irate.baseRatePerMin + Int.abs(Float.toInt(Float.nearest(slopeRate)))
     };
 
     // get current supply rate per second, scaled up by 10e8 (8 decimals places)
