@@ -221,8 +221,68 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    // borrow
+    // borrow - TODO: incomplete
+    public shared(msg) func borrow(uAmount: Nat): async Types.TxReceipt {
+        // check if borrow allowed { main pj cannister }
+
+        // check cash available
+        let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
+        if(uAmount > canisterBal) { return #Err(#InvalidAmount) };
+        
+        // call fn{ accrueInterest() }
+
+        // transfer out
+        let transferRx = await uToken.transfer(msg.caller, uAmount);
+        switch(transferRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
+
+        // update state
+        fiTkn.cdata.totalBorrows_ += uAmount;
+        switch(fiTkn.cdata.accountBorrows.get(msg.caller)){
+            case(?borrowRec) {
+                let newPrincipal = borrowRec.principal + uAmount;
+                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = newPrincipal; borrowIndex = fiTkn.cdata.borrowIndex; });
+            };
+            case(_) {
+                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = uAmount; borrowIndex = fiTkn.cdata.borrowIndex; });
+            };
+        };
+      
+        txcounter += 1;
+        return #Ok(txcounter - 1);
+    };
+
     // repay - TODO: incomplete
+    public shared(msg) func repay(uAmount: Nat): async Types.TxReceipt {
+        // check if repay allowed { main pj cannister }
+
+        // call fn{ accrueInterest() }
+
+        // transfer in
+        let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), uAmount);
+        switch(transferRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
+
+        // update state
+        fiTkn.cdata.totalBorrows_ -= uAmount;
+        switch(fiTkn.cdata.accountBorrows.get(msg.caller)){
+            case(?borrowRec) {
+                let newPrincipal = if(borrowRec.principal >= uAmount) { borrowRec.principal - uAmount } else { 0 };     // NOTE: gets warning, but already fixed
+                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = newPrincipal; borrowIndex = fiTkn.cdata.borrowIndex; });
+            };
+            case(_) {
+                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = uAmount; borrowIndex = fiTkn.cdata.borrowIndex; });
+            };
+        };
+      
+        txcounter += 1;
+        return #Ok(txcounter - 1);
+    };
+
     // accrue interest, TODO: move to private after testing
     public func accrueInterest(): async Types.TxReceipt {
         // get time diff to last accrual time diff < tolerance?

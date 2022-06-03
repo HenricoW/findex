@@ -32,7 +32,7 @@ shared(msg) actor class UToken(
     _fee: Nat
     ) = this {
     type Operation = Types.Operation;
-    type TransactionStatus = Types.TransactionStatus;
+    type TransactionStatus = Types.TxStatus;
     type TxRecord = Types.TxRecord;
     type Metadata = {
         logo : Text;
