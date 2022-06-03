@@ -26,17 +26,23 @@ echo Alice id = $ALICE_PUBLIC_KEY
 echo Fee id = $FEE_PUBLIC_KEY
 echo
 
-dfx start --clean --background --emulator
+dfx start --background --emulator #--clean
 echo
 dfx canister create utoken --no-wallet
+dfx canister create interestRate --no-wallet
 dfx canister create fitoken --no-wallet
 echo
 dfx build utoken
+dfx build interestRate
 dfx build fitoken
 
 UTOKENID_TEXT=$(dfx canister id utoken)
 UTOKENID="principal \"$UTOKENID_TEXT\""
 echo uToken id: $UTOKENID
+
+IRATEID_TEXT=$(dfx canister id interestRate)
+IRATEID="principal \"$IRATEID_TEXT\""
+echo interestRate id: $IRATEID
 
 FITOKENID=$(dfx canister id fitoken)
 FITOKENID="principal \"$FITOKENID\""
@@ -48,7 +54,8 @@ echo
 
 HOME=$ALICE_HOME
 eval dfx canister install utoken --argument="'(\"Test uToken Logo\", \"Test uToken Name\", \"Test uToken Symbol\", 6, "1_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
-eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", "110_000_000", 0)'"
+eval dfx canister install interestRate --argument="'(6.0, 24.0)'"
+eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", "110_000_000", \"$IRATEID_TEXT\", 0)'"
 
 echo
 echo == Initial setting for utoken canister
@@ -79,11 +86,11 @@ echo
 echo ===================== Supply tests =====================
 echo
 echo == Alice grants FiToken permission to spend 500 of her utokens, should succeed.
-eval dfx canister call utoken approve "'($FITOKENID, 500_000_000)'"
+eval dfx canister call utoken approve "'($FITOKENID, 1_000_000_000)'"
 echo
 
 echo == Alice mints fitokens \(exchanging 300 utokens\), should succeed.
-eval dfx canister call fitoken mintfi "300_000_000"
+eval dfx canister call fitoken mintfi "400_000_000"
 echo
 
 echo New balances:
@@ -105,7 +112,6 @@ echo Fee holder uToken Bal = $( \
     eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'" \
 )
 echo
-
 
 echo
 echo
@@ -132,11 +138,41 @@ echo FiToken Total Supply = $( \
 )
 echo
 
-
 echo
 echo == Alice redeems fitokens \(for 500 utokens\), should not succeed.
-eval dfx canister call fitoken redeem "500_000_000"
+eval dfx canister call fitoken redeem "5_000_000_000"
 echo
+
+echo
+echo
+echo
+echo ===================== Borrow tests =====================
+echo
+echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
+eval dfx canister call fitoken getTotLiqInfo
+echo
+echo == Accrue interest.
+eval dfx canister call fitoken accrueInterest
+echo
+echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
+eval dfx canister call fitoken getTotLiqInfo
+echo
+echo == Alice borrows 100 utokens.
+eval dfx canister call fitoken borrow "200_000_000"
+echo
+echo == Accrue interest.
+eval dfx canister call fitoken accrueInterest
+echo
+echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
+eval dfx canister call fitoken getTotLiqInfo
+echo
+
+
+
+
+
+
+
 
 # echo
 # echo == Transfer 0 utokens from Alice to Bob, should Return false, as value is smaller than fee.
