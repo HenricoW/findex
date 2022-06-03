@@ -45,26 +45,39 @@ module {
         _owner: Principal,
         _underlying: Text,
         _initialExchangeRateMantissa: Nat,
+        _interestRateModelID: Text,
         _fee: Nat
     ) = this {
+        public var ONE: Nat = 100_000_000;
+        
         public var cdata = {
             var owner_ : Principal = _owner;
             var logo_ : Text = _logo;
             var name_ : Text = _name;
             var decimals_ : Nat8 = _decimals;
             var symbol_ : Text = _symbol;
-            var totalSupply_ : Nat = 0;
             var blackhole : Principal = Principal.fromText("aaaaa-aa");
             var feeTo : Principal = _owner;
             var fee : Nat = _fee;
 
+            var totalSupply_ : Nat = 0;
+            var totalBorrows_ : Nat = 0;
+            var totalReserves_ : Nat = 0;
+            var borrowIndex : Nat = ONE;
+            var accrualTime : Time.Time = Time.now();
+
+            var fitroller : Principal = Principal.fromText("aaaaa-aa");
+            var irateModel : Text = _interestRateModelID;
+            var temporalMargin: Nat8 = 60;                                      // 60 secs
+
             var balances = HashMap.HashMap<Principal, Nat>(1, Principal.equal, Principal.hash);
+            var accountBorrows = HashMap.HashMap<Principal, Types.BorrowSnapshot>(1, Principal.equal, Principal.hash);
             var allowances = HashMap.HashMap<Principal, HashMap.HashMap<Principal, Nat>>(1, Principal.equal, Principal.hash);
         };
 
         public var underlyingId: Text = _underlying;
         public var exchangeRateMantissa: Nat = _initialExchangeRateMantissa;
-        public var ONE: Nat = 100_000_000;
+        public var reserveFactorMantissa: Nat = 50_000_000;                     // 0.5
         // public var thisCanister = Principal.fromActor(this);
 
         public func _balanceOf(who: Principal) : Nat {

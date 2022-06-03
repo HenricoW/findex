@@ -20,6 +20,11 @@ module {
         fee : Nat;
     };
 
+    public type BorrowSnapshot = {
+        principal: Nat;
+        borrowIndex: Nat;
+    };
+
     public type TxStatus = {
         #succeeded;
         #inprogress;

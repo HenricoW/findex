@@ -7,7 +7,9 @@ import Array "mo:base/Array";
 import Option "mo:base/Option";
 import Order "mo:base/Order";
 import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Int "mo:base/Int";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
@@ -25,6 +27,7 @@ shared(msg) actor class FiToken(
     _owner: Principal,
     _underlying: Text,
     _initialExchangeRateMantissa: Nat,
+    _interestRateModelID: Text,
     _fee: Nat
     ) : async IfiToken.Interface = this {
 
@@ -36,6 +39,7 @@ shared(msg) actor class FiToken(
         _owner,
         _underlying,
         _initialExchangeRateMantissa,
+        _interestRateModelID,
         _fee
     );
     private stable var balanceEntries : [(Principal, Nat)] = [];
@@ -147,6 +151,12 @@ shared(msg) actor class FiToken(
         balanceOf: (Principal) -> async Nat;
     };
 
+    let interestRateModel = actor(fiTkn.cdata.irateModel): actor {
+        utilizationRate : shared (cash: Nat, borrows: Nat, reserves: Nat) -> async Nat;
+        getBorrowRate : shared (cash: Nat, borrows: Nat, reserves: Nat) -> async Nat;
+        getSupplyRate : shared (cash: Nat, borrows: Nat, reserves: Nat, reserveFactorMantissa: Nat) -> async Nat;
+    };
+
     public shared(msg) func mintfi(uAmount: Nat): async Types.TxReceipt {
       // check if mint allowed { main pj cannister }
 
@@ -212,10 +222,40 @@ shared(msg) actor class FiToken(
     };
 
     // borrow
+    // repay - TODO: incomplete
+    // accrue interest, TODO: move to private after testing
+    public func accrueInterest(): async Types.TxReceipt {
+        // get time diff to last accrual time diff < tolerance?
+        let oneSecNat = 1_000_000_000;
+        let oneMinNat = 60 * oneSecNat;
+        let tooSoon = Int.abs(Time.now()) < Int.abs(fiTkn.cdata.accrualTime) + Nat8.toNat(fiTkn.cdata.temporalMargin) * oneSecNat;      // no underflow possible
 
-    // repay
+        if(tooSoon) { return #Err(#Other("Too soon")) };
+        let timeDiffMins = Int.abs(Time.now() - fiTkn.cdata.accrualTime) / oneMinNat;                                       // underflow possible, but already checked
 
-    // accrue interest
+        // get current parameters
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));                             // TODO: may need to update this
+        let supply_i = fiTkn.cdata.totalSupply_;
+        let borrows_i = fiTkn.cdata.totalBorrows_;
+        let reserves_i = fiTkn.cdata.totalReserves_;
+        let index_i = fiTkn.cdata.borrowIndex;
+
+        // calc interest accumulation
+        let borrowRateMantissa = await interestRateModel.getBorrowRate(cash_i, borrows_i, reserves_i);
+        // if underlying uses < 8 decimals, the following accInterest calc will yield 0 (smaller than 8 dec definition of ONE)
+        // thus, another test is needed to not artificially move accrual time forward
+        let accInterest = borrows_i * borrowRateMantissa * timeDiffMins / fiTkn.ONE;
+        // if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
+        if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
+
+        // update accrual time, borrow, reserves and index values
+        fiTkn.cdata.totalBorrows_ := borrows_i + accInterest;
+        fiTkn.cdata.totalReserves_ := reserves_i + (accInterest * fiTkn.reserveFactorMantissa / fiTkn.ONE);
+        fiTkn.cdata.borrowIndex := index_i + borrowRateMantissa * timeDiffMins;
+        fiTkn.cdata.accrualTime := Time.now();
+
+        #Ok(0)
+    };
 
     // get borrow balance internal
 
@@ -227,6 +267,12 @@ shared(msg) actor class FiToken(
     public query func getTokenFee() : async Nat { fiTkn.cdata.fee };
     public query func balanceOf(who: Principal) : async Nat { fiTkn._balanceOf(who) };
     public query func allowance(owner: Principal, spender: Principal) : async Nat { fiTkn._allowance(owner, spender) };
+
+    // FOR TESTING ONLY
+    public query func getTotLiqInfo() : async (Nat, Nat, Nat, Nat) {
+        (fiTkn.cdata.totalSupply_, fiTkn.cdata.totalBorrows_, fiTkn.cdata.totalReserves_, fiTkn.cdata.borrowIndex)
+    };
+
 
     public query func getMetadata() : async Types.Metadata {
         return {
