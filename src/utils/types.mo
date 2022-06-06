@@ -47,6 +47,15 @@ module {
         };
     };
 
+    public type LiqReceipt = {
+        #Ok: (Nat, Nat);
+        #Err: {
+            #SnapshotError;
+            #OracleError;
+            #Other: Text;
+        };
+    };
+
     /// Update call operations
     public type Operation = {
         #mint;

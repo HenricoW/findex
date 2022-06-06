@@ -9,6 +9,8 @@ import Buffer "mo:base/Buffer";
 import FiTrollerMod "../modules/fitroller_mod"
 
 shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
+    let ONE: Nat = 100_000_000;
+
     private stable var txCounter = 0;
     // func increaseTxCounter() : async FiTrollerMod.TxReceipt {
     //     let txId = txCounter;
@@ -79,6 +81,62 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
     public func repayBorrowAllowed(fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
     // Is transfering of fiTokens allowed (affected by user liquidity status)
     public func transferAllowed(fiToken: Principal, from: Principal, to: Principal, fiAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
+
+    public func getHypotheticalLiquidity(user: Principal, fitoken: Principal, redeemAmount: Nat, borrowAmount: Nat) : async Types.LiqReceipt {
+        let userAssets = await getAccountAssets(user);
+
+        // tally up all assets for which markets were entered
+        var totCollateral: Nat = 0;
+        var totBorrows: Nat = 0;
+        label l for(asset in userAssets.vals()) {
+            let marketRx = ftrlr.cdata.markets.get(asset);
+            let market = switch(marketRx) {
+                case null { continue l; };
+                case (?mkt) { mkt };
+            };
+
+            let fiAsset = actor(Principal.toText(asset)): actor {
+                getAccountSnapshot: (user: Principal) -> async (Nat, Nat, Nat);
+            };
+
+            let (fiBalance, borrowBal, exchRate) = await fiAsset.getAccountSnapshot(user);
+            let collateralFactor = market.collateralFactorMantissa;
+
+            // call oracle to get icp price of underlying token
+            let priceInICP = 1_728_000_000; // 17.28 ICP
+
+            // This assets collateral contribution:
+            // fitoken balance * exch rate * price in ICP * collateral factor
+            let uAmount = fiBalance * exchRate / ONE;
+            let icpVal = uAmount * priceInICP / ONE;                                // TODO: double check for utoken decimals != 8
+            let collContribution = icpVal * collateralFactor / ONE;
+
+            totCollateral += collContribution;
+
+            // accumulate borrows
+            let icpBorrowVal = borrowBal * priceInICP / ONE;                        // TODO: double check for utoken decimals != 8
+            
+            totBorrows += icpBorrowVal;
+
+            // hypothetical action
+            if(asset == fitoken) {
+                // borrow effect
+                totBorrows += borrowAmount * priceInICP / ONE;
+
+                // redeem effect actually decreases total collateral, but adding to borrows has same effect w.r.t. the final comparison
+                // this way also reduces risk of underflow panic
+                let icpRedeem = redeemAmount * priceInICP / ONE;                    // TODO: double check for utoken decimals != 8
+                totBorrows += icpRedeem * collateralFactor / ONE;
+            };
+        };
+
+        if(totBorrows <= totCollateral) {
+            return #Ok((totCollateral - totBorrows, 0))
+        } else {
+            return #Ok((0, totBorrows - totCollateral))
+        };
+
+    };
 
     public query func getMetadata(): async FiTrollerMod.Metadata { ftrlr.getData() };
 
