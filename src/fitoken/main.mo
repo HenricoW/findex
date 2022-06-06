@@ -157,6 +157,7 @@ shared(msg) actor class FiToken(
         getSupplyRate : shared (cash: Nat, borrows: Nat, reserves: Nat, reserveFactorMantissa: Nat) -> async Nat;
     };
 
+    // mintfi - TODO: incomplete
     public shared(msg) func mintfi(uAmount: Nat): async Types.TxReceipt {
       // check if mint allowed { main pj cannister }
 
@@ -166,10 +167,17 @@ shared(msg) actor class FiToken(
             case(#Err errType)  { return #Err(errType) };
         };
 
-        // call fn{ accrueInterest() }
+        // accrue interest
+        let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
+
+        let exchRateRx = await getExchangeRate();
+        let exchRate = switch(exchRateRx){
+            case(#Ok val) { val };
+            case(#Err errType)  { return #Err(errType) };
+        };
 
         let to_balance = fiTkn._balanceOf(msg.caller);
-        let fiAmount = uAmount * fiTkn.ONE / fiTkn.exchangeRateMantissa;
+        let fiAmount = uAmount * fiTkn.ONE / exchRate;
         fiTkn.cdata.totalSupply_ += fiAmount;
         fiTkn.cdata.balances.put(msg.caller, to_balance + fiAmount);
 
@@ -186,6 +194,7 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
+    // redeem - TODO: incomplete
     public shared(msg) func redeem(uAmount: Nat): async Types.TxReceipt {
       // check if redeem allowed { main pj cannister }
 
@@ -193,9 +202,16 @@ shared(msg) actor class FiToken(
       let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
       if(uAmount > canisterBal) { return #Err(#InvalidAmount) };
       
-      // call fn{ accrueInterest() }
+        // accrue interest
+        let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
 
-      let fiAmount = uAmount * fiTkn.ONE / fiTkn.exchangeRateMantissa;
+        let exchRateRx = await getExchangeRate();
+        let exchRate = switch(exchRateRx){
+            case(#Ok val) { val };
+            case(#Err errType)  { return #Err(errType) };
+        };
+
+      let fiAmount = uAmount * fiTkn.ONE / exchRate;
       let fi_balance = fiTkn._balanceOf(msg.caller);
       if(fiAmount > fi_balance) { return #Err(#InsufficientBalance) };
       
@@ -229,10 +245,15 @@ shared(msg) actor class FiToken(
         let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
         if(uAmount > canisterBal) { return #Err(#InvalidAmount) };
         
-        // call fn{ accrueInterest() }
+        // accrue interest
+        let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
+        // switch(accrueRx) {
+        //     case(#Ok val) { };
+        //     case(#Err errType)  { return #Err(errType) };
+        // };
 
         // transfer out
-        let transferRx = await uToken.transfer(msg.caller, uAmount);
+        let transferRx = await uToken.transfer(msg.caller, uAmount);            // re-entrancy risk???
         switch(transferRx) {
             case(#Ok val) { };
             case(#Err errType)  { return #Err(errType) };
