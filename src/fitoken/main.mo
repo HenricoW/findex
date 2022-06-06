@@ -283,6 +283,43 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
+    // get user's up to date fitoken bal, borrow bal & exch rate
+    public func getAccountSnapshot(user: Principal): async (Nat, Nat, Nat) {
+        let fiBalance = switch(fiTkn.cdata.balances.get(user)){
+            case (?val) { val };
+            case (_) { 0 };
+        };
+        
+        let borrowRecRx = await getBorrowBalance(user);
+        let borrowBal = switch(borrowRecRx){
+            case(#Ok principal) { principal };
+            case(#Err errType) { 0 };
+        };
+        if(fiBalance == 0) assert(borrowBal == 0);
+        
+        let exchRateRx = await getExchangeRate();
+        let exchRate = switch(exchRateRx){
+            case(#Ok val) { val };
+            case(#Err errType) { fiTkn.exchangeRateMantissa };
+        };
+
+        (fiBalance, borrowBal, exchRate)
+    };
+
+    // get updated user borrow balance
+    public func getBorrowBalance(user: Principal): async Types.TxReceipt {
+        // recorded borrow state
+        let borrowRec = switch(fiTkn.cdata.accountBorrows.get(user)){
+            case (?val) { val };
+            case (_) { return #Err(#Other("Account info not found")) };
+        };
+
+        // calc updated principal
+        let newPrincipal = (borrowRec.principal * fiTkn.cdata.borrowIndex) / borrowRec.borrowIndex;
+
+        #Ok(newPrincipal)
+    };
+
     // accrue interest, TODO: move to private after testing
     public func accrueInterest(): async Types.TxReceipt {
         // get time diff to last accrual time diff < tolerance?
@@ -315,6 +352,21 @@ shared(msg) actor class FiToken(
         fiTkn.cdata.accrualTime := Time.now();
 
         #Ok(0)
+    };
+
+    // get up to date exchange rate
+    public func getExchangeRate(): async Types.TxReceipt {
+        // supply 0?
+        if(fiTkn.cdata.totalSupply_ == 0) { return #Ok(fiTkn.exchangeRateMantissa) };               // will be initial exch rate
+
+        // calculate and store
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));
+        if(fiTkn.cdata.totalReserves_ > (cash_i + fiTkn.cdata.totalBorrows_)) { return #Err(#Other("Neg exch rate - Draw down reserves")) };  // w.r.t warning for next line
+
+        let exchRate = fiTkn.ONE * (cash_i + fiTkn.cdata.totalBorrows_ - fiTkn.cdata.totalReserves_) / fiTkn.cdata.totalSupply_;
+        fiTkn.exchangeRateMantissa := exchRate;
+
+        #Ok(exchRate)
     };
 
     // get borrow balance internal
