@@ -24,6 +24,7 @@ echo
 dfx start --clean --background --emulator
 echo
 dfx canister create utoken --no-wallet
+dfx canister create interestRate --no-wallet
 dfx canister create fitoken --no-wallet
 dfx canister create fitroller --no-wallet
 echo
@@ -34,6 +35,10 @@ dfx build fitroller
 UTOKENID_TEXT=$(dfx canister id utoken)
 UTOKENID="principal \"$UTOKENID_TEXT\""
 echo uToken id: $UTOKENID
+
+IRATEID_TEXT=$(dfx canister id interestRate)
+IRATEID="principal \"$IRATEID_TEXT\""
+echo interestRate id: $IRATEID
 
 FITOKENID=$(dfx canister id fitoken)
 FITOKENID="principal \"$FITOKENID\""
@@ -49,7 +54,7 @@ echo
 
 HOME=$ALICE_HOME
 eval dfx canister install utoken --argument="'(\"Test uToken Logo\", \"Test uToken Name\", \"Test uToken Symbol\", 6, "1_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
-eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", "110_000_000", 0)'"
+eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", "110_000_000", \"$IRATEID_TEXT\", 0)'"
 eval dfx canister install fitroller
 
 echo

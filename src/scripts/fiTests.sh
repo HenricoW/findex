@@ -22,6 +22,7 @@ FEE_PUBLIC_KEY="principal \"$( \
 )\""
 
 echo
+echo $ALICE_HOME
 echo Alice id = $ALICE_PUBLIC_KEY
 echo Fee id = $FEE_PUBLIC_KEY
 echo
@@ -85,11 +86,11 @@ echo
 echo
 echo ===================== Supply tests =====================
 echo
-echo == Alice grants FiToken permission to spend 500 of her utokens, should succeed.
+echo == Alice grants FiToken permission to spend 1000 of her utokens, should succeed.
 eval dfx canister call utoken approve "'($FITOKENID, 1_000_000_000)'"
 echo
 
-echo == Alice mints fitokens \(exchanging 300 utokens\), should succeed.
+echo == Alice mints fitokens \(exchanging 400 utokens\), should succeed.
 eval dfx canister call fitoken mintfi "400_000_000"
 echo
 
@@ -139,7 +140,7 @@ echo FiToken Total Supply = $( \
 echo
 
 echo
-echo == Alice redeems fitokens \(for 500 utokens\), should not succeed.
+echo == Alice redeems fitokens \(for 5000 utokens\), should not succeed.
 eval dfx canister call fitoken redeem "5_000_000_000"
 echo
 
@@ -151,20 +152,26 @@ echo
 echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
 eval dfx canister call fitoken getTotLiqInfo
 echo
-echo == Accrue interest.
-eval dfx canister call fitoken accrueInterest
+echo == Fitoken exchange rate
+eval dfx canister call fitoken getExchangeRate
 echo
-echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
-eval dfx canister call fitoken getTotLiqInfo
-echo
-echo == Alice borrows 100 utokens.
+# echo == Accrue interest.
+# eval dfx canister call fitoken accrueInterest
+# echo
+# echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
+# eval dfx canister call fitoken getTotLiqInfo
+# echo
+echo == Alice borrows 200 utokens.
 eval dfx canister call fitoken borrow "200_000_000"
 echo
-echo == Accrue interest.
-eval dfx canister call fitoken accrueInterest
-echo
+# echo == Accrue interest.
+# eval dfx canister call fitoken accrueInterest
+# echo
 echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
 eval dfx canister call fitoken getTotLiqInfo
+echo
+echo == Fitoken exchange rate
+eval dfx canister call fitoken getExchangeRate
 echo
 
 
