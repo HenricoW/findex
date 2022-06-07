@@ -26,6 +26,7 @@ shared(msg) actor class FiToken(
     _decimals: Nat8,
     _owner: Principal,
     _underlying: Text,
+    _fitroller: Text,
     _initialExchangeRateMantissa: Nat,
     _interestRateModelID: Text,
     _fee: Nat
@@ -38,6 +39,7 @@ shared(msg) actor class FiToken(
         _decimals,
         _owner,
         _underlying,
+        _fitroller,
         _initialExchangeRateMantissa,
         _interestRateModelID,
         _fee
@@ -151,6 +153,12 @@ shared(msg) actor class FiToken(
         balanceOf: (Principal) -> async Nat;
     };
 
+    let ftrlr = actor(fiTkn.cdata.fitroller): actor {
+        mintAllowed : (fiToken: Principal, minter: Principal, uAmount: Nat) -> async Types.TxReceipt;
+        redeemAllowed : (fiToken: Principal, redeemer: Principal, uAmount: Nat) -> async Types.TxReceipt;
+        borrowAllowed : (fiToken: Principal, borrower: Principal, uAmount: Nat) -> async Types.TxReceipt;
+    };
+
     let interestRateModel = actor(fiTkn.cdata.irateModel): actor {
         utilizationRate : shared (cash: Nat, borrows: Nat, reserves: Nat) -> async Nat;
         getBorrowRate : shared (cash: Nat, borrows: Nat, reserves: Nat) -> async Nat;
@@ -160,6 +168,13 @@ shared(msg) actor class FiToken(
     // mintfi - TODO: incomplete
     public shared(msg) func mintfi(uAmount: Nat): async Types.TxReceipt {
       // check if mint allowed { main pj cannister }
+        let allowedRx = await ftrlr.mintAllowed(Principal.fromActor(this), msg.caller, uAmount);
+        switch(allowedRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
+
+        let exchRateRx = await getExchangeRate();
 
         let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), uAmount);
         switch(transferRx) {
@@ -169,8 +184,6 @@ shared(msg) actor class FiToken(
 
         // accrue interest
         let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
-
-        let exchRateRx = await getExchangeRate();
         let exchRate = switch(exchRateRx){
             case(#Ok val) { val };
             case(#Err errType)  { return #Err(errType) };
@@ -197,6 +210,11 @@ shared(msg) actor class FiToken(
     // redeem - TODO: incomplete
     public shared(msg) func redeem(uAmount: Nat): async Types.TxReceipt {
       // check if redeem allowed { main pj cannister }
+        let allowedRx = await ftrlr.redeemAllowed(Principal.fromActor(this), msg.caller, uAmount);
+        switch(allowedRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
 
       // not needed but extra safety check
       let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
@@ -240,6 +258,11 @@ shared(msg) actor class FiToken(
     // borrow - TODO: incomplete
     public shared(msg) func borrow(uAmount: Nat): async Types.TxReceipt {
         // check if borrow allowed { main pj cannister }
+        let allowedRx = await ftrlr.borrowAllowed(Principal.fromActor(this), msg.caller, uAmount);
+        switch(allowedRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
 
         // check cash available
         let canisterBal = await uToken.balanceOf(Principal.fromActor(this));

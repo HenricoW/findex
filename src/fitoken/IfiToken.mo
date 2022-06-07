@@ -44,6 +44,7 @@ module {
         _decimals: Nat8,
         _owner: Principal,
         _underlying: Text,
+        _fitroller: Text,
         _initialExchangeRateMantissa: Nat,
         _interestRateModelID: Text,
         _fee: Nat
@@ -66,7 +67,7 @@ module {
             var borrowIndex : Nat = ONE;
             var accrualTime : Time.Time = Time.now();
 
-            var fitroller : Principal = Principal.fromText("aaaaa-aa");
+            var fitroller : Text = _fitroller;
             var irateModel : Text = _interestRateModelID;
             var temporalMargin: Nat8 = 60;                                      // 60 secs
 

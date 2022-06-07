@@ -5,6 +5,7 @@ import Text "mo:base/Text";
 import Bool "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
+import Time "mo:base/Time";
 
 import FiTrollerMod "../modules/fitroller_mod"
 
@@ -19,6 +20,10 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
     // };
 
     let ftrlr = FiTrollerMod.Fitroller(msg.caller);
+
+    let fiOracle = actor(Principal.toText(ftrlr.cdata.oracle)): actor {
+        getPrice: (ticker: Text) -> async (Nat, Nat8, Time.Time);
+    };
 
     // Add multiple markets to a user's liquidity calculations
     public shared(msg) func enterMarkets(fiTokens: [Principal]) : async [FiTrollerMod.TxStatus] {
@@ -72,11 +77,69 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
     public shared(msg) func exitMarket(fiToken: Principal) : async FiTrollerMod.TxStatus { #succeeded };
 
     // Is minting allowed
-    public func mintAllowed(fiToken: Principal, minter: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
+    public func mintAllowed(fiToken: Principal, minter: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt {
+        switch(ftrlr.cdata.markets.get(fiToken)) {
+            case null { return #Err(#Other("Market not supported")) };
+            case (?mkt) { #Ok(0) };
+        };
+
+        // check if minting is paused (when pause fnality is added)
+    };
     // Is redeeming allowed
-    public func redeemAllowed(fiToken: Principal, redeemer: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
+    public func redeemAllowed(fiToken: Principal, redeemer: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt {
+        let mintAllowRx = await mintAllowed(fiToken, redeemer, uAmount);            // same basic checks
+        switch(mintAllowRx) {
+            case (#Err errType) { return #Err(errType) };
+            case (#Ok(_)) { };
+        };
+
+        // check if redeem is paused (when pause fnality is added)
+        let userLiqRx = await getHypotheticalLiquidity(redeemer, fiToken, uAmount, 0);
+        let (_, shortfall) = switch(userLiqRx) {
+            case (#Err(_)) { return #Err(#Other("Error getting liquidity")) };
+            case (#Ok val) { val };
+        };
+
+        if(shortfall > 0) { return #Err(#Other("Insufficient collateral")) };
+
+        #Ok(0) 
+    };
+
     // Is borrowing allowed (affected by user liquidity status)
-    public func borrowAllowed(fiToken: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
+    public shared(msg) func borrowAllowed(fiToken: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt {
+        // is the market supported?
+        let market = switch(ftrlr.cdata.markets.get(fiToken)) {
+            case (?mkt) { mkt };
+            case null { return #Err(#Other("Market not supported")) };
+        };
+
+        // has the borrower entered the market being requested for?
+        switch(market.accountMembership.get(borrower)){
+            case (?record) { };
+            case null {
+                // if user has not entered this market, call must be from the fitoken concerned
+                if(msg.caller != fiToken) { return #Err(#Other("Caller not fiToken")) };
+
+                // add to this market, as assets list is used to calculate liquidity, else this borrow will be overlooked in estimation
+                let added = await ftrlr.addAssetToAccount(borrower, fiToken);           // add market to user's entered assets
+                market.accountMembership.put(borrower, true);                           // add user to market
+            };
+        };
+
+        // check if redeem is paused (when pause fnality is added)
+
+        // check effect on user's liquidity
+        let userLiqRx = await getHypotheticalLiquidity(borrower, fiToken, 0, uAmount);
+        let (_, shortfall) = switch(userLiqRx) {
+            case (#Err(_)) { return #Err(#Other("Error getting liquidity")) };
+            case (#Ok val) { val };
+        };
+
+        if(shortfall > 0) { return #Err(#Other("Insufficient collateral")) };
+
+        #Ok(0) 
+    };
+
     // Is repayBorrowing allowed
     public func repayBorrowAllowed(fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
     // Is transfering of fiTokens allowed (affected by user liquidity status)
@@ -145,7 +208,7 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
         if(msg.caller != ftrlr.cdata.admin) { return #Err(#Unauthorized); };
 
         // is it a valid fiToken?
-        let fiTkn = actor(Principal.toText(fiToken)): actor {
+        let fiTkn = actor(Principal.toText(fiToken)): actor {               // TODO: abstract away?? appears in multiple places in this file
             isFiToken: () -> async Bool;
         };
         try {
