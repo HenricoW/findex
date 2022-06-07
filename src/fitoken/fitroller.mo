@@ -141,7 +141,13 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
     };
 
     // Is repayBorrowing allowed
-    public func repayBorrowAllowed(fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
+    public func repayAllowed(fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) : async FiTrollerMod.TxReceipt {
+        let mintAllowRx = await mintAllowed(fiToken, payer, uAmount);            // same basic checks
+        switch(mintAllowRx) {
+            case (#Err errType) { return #Err(errType) };
+            case (#Ok(_)) { #Ok(0) };
+        };
+    };
     // Is transfering of fiTokens allowed (affected by user liquidity status)
     public func transferAllowed(fiToken: Principal, from: Principal, to: Principal, fiAmount: Nat) : async FiTrollerMod.TxReceipt { #Ok(0) };
 

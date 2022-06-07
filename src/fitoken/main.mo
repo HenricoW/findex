@@ -157,6 +157,7 @@ shared(msg) actor class FiToken(
         mintAllowed : (fiToken: Principal, minter: Principal, uAmount: Nat) -> async Types.TxReceipt;
         redeemAllowed : (fiToken: Principal, redeemer: Principal, uAmount: Nat) -> async Types.TxReceipt;
         borrowAllowed : (fiToken: Principal, borrower: Principal, uAmount: Nat) -> async Types.TxReceipt;
+        repayAllowed : (fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) -> async Types.TxReceipt;
     };
 
     let interestRateModel = actor(fiTkn.cdata.irateModel): actor {
@@ -286,8 +287,13 @@ shared(msg) actor class FiToken(
         fiTkn.cdata.totalBorrows_ += uAmount;
         switch(fiTkn.cdata.accountBorrows.get(msg.caller)){
             case(?borrowRec) {
-                let newPrincipal = borrowRec.principal + uAmount;
-                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = newPrincipal; borrowIndex = fiTkn.cdata.borrowIndex; });
+                // get updated borrow bal
+                let borrBalRx = await getBorrowBalance(msg.caller);
+                let principal_j = switch(borrBalRx){
+                    case (#Ok val) { val };
+                    case (#Err errType) { return #Err(errType) };
+                };
+                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = principal_j + uAmount; borrowIndex = fiTkn.cdata.borrowIndex; });
             };
             case(_) {
                 fiTkn.cdata.accountBorrows.put(msg.caller, { principal = uAmount; borrowIndex = fiTkn.cdata.borrowIndex; });
@@ -299,29 +305,37 @@ shared(msg) actor class FiToken(
     };
 
     // repay - TODO: incomplete
-    public shared(msg) func repay(uAmount: Nat): async Types.TxReceipt {
+    public shared(msg) func repayBehalf(borrower: Principal, uAmount: Nat): async Types.TxReceipt {
+        // accrue interest
+        let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
+
         // check if repay allowed { main pj cannister }
+        let allowedRx = await ftrlr.repayAllowed(Principal.fromActor(this), msg.caller, borrower, uAmount);
+        switch(allowedRx) {
+            case(#Ok val) { };
+            case(#Err errType)  { return #Err(errType) };
+        };
 
-        // call fn{ accrueInterest() }
+        // get updated borrow bal
+        let borrBalRx = await getBorrowBalance(borrower);
+        let principal_j = switch(borrBalRx){
+            case (#Ok val) { val };
+            case (#Err errType) { return #Err(errType) };
+        };
 
-        // transfer in
-        let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), uAmount);
+        // if uAmount > updated borrow bal, transfer only amount needed
+        let repayVal = if(uAmount >= principal_j) { principal_j } else { uAmount };
+
+        // do transfer
+        let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), repayVal);
         switch(transferRx) {
             case(#Ok val) { };
             case(#Err errType)  { return #Err(errType) };
         };
 
         // update state
-        fiTkn.cdata.totalBorrows_ -= uAmount;
-        switch(fiTkn.cdata.accountBorrows.get(msg.caller)){
-            case(?borrowRec) {
-                let newPrincipal = if(borrowRec.principal >= uAmount) { borrowRec.principal - uAmount } else { 0 };     // NOTE: gets warning, but already fixed
-                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = newPrincipal; borrowIndex = fiTkn.cdata.borrowIndex; });
-            };
-            case(_) {
-                fiTkn.cdata.accountBorrows.put(msg.caller, { principal = uAmount; borrowIndex = fiTkn.cdata.borrowIndex; });
-            };
-        };
+        fiTkn.cdata.totalBorrows_ -= repayVal;
+        fiTkn.cdata.accountBorrows.put(borrower, { principal = principal_j - repayVal; borrowIndex = fiTkn.cdata.borrowIndex; });
       
         txcounter += 1;
         return #Ok(txcounter - 1);
@@ -427,6 +441,32 @@ shared(msg) actor class FiToken(
     // FOR TESTING ONLY
     public query func getTotLiqInfo() : async (Nat, Nat, Nat, Nat) {
         (fiTkn.cdata.totalSupply_, fiTkn.cdata.totalBorrows_, fiTkn.cdata.totalReserves_, fiTkn.cdata.borrowIndex)
+    };
+
+    // FOR TESTING ONLY
+    public func accrueInterestTest(mins: Nat): async Types.TxReceipt {
+        // get current parameters
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));                             // TODO: may need to update this
+        let supply_i = fiTkn.cdata.totalSupply_;
+        let borrows_i = fiTkn.cdata.totalBorrows_;
+        let reserves_i = fiTkn.cdata.totalReserves_;
+        let index_i = fiTkn.cdata.borrowIndex;
+
+        // calc interest accumulation
+        let borrowRateMantissa = await interestRateModel.getBorrowRate(cash_i, borrows_i, reserves_i);
+        // if underlying uses < 8 decimals, the following accInterest calc will yield 0 (smaller than 8 dec definition of ONE)
+        // thus, another test is needed to not artificially move accrual time forward
+        let accInterest = borrows_i * borrowRateMantissa * mins / fiTkn.ONE;
+        // if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
+        if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
+
+        // update accrual time, borrow, reserves and index values
+        fiTkn.cdata.totalBorrows_ := borrows_i + accInterest;
+        fiTkn.cdata.totalReserves_ := reserves_i + (accInterest * fiTkn.reserveFactorMantissa / fiTkn.ONE);
+        fiTkn.cdata.borrowIndex := index_i + borrowRateMantissa * mins;
+        fiTkn.cdata.accrualTime := Time.now();
+
+        #Ok(0)
     };
 
 

@@ -21,7 +21,7 @@ module {
         // Is borrowing allowed (affected by user liquidity status)
         borrowAllowed : (fiToken: Principal, borrower: Principal, uAmount: Nat) -> async TxReceipt;
         // Is repayBorrowing allowed
-        repayBorrowAllowed : (fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) -> async TxReceipt;
+        repayAllowed : (fiToken: Principal, payer: Principal, borrower: Principal, uAmount: Nat) -> async TxReceipt;
         // Is transfering of fiTokens allowed (affected by user liquidity status)
         transferAllowed : (fiToken: Principal, from: Principal, to: Principal, fiAmount: Nat) -> async TxReceipt;
     
