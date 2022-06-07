@@ -31,10 +31,12 @@ dfx start --background --emulator #--clean
 echo
 dfx canister create utoken --no-wallet
 dfx canister create interestRate --no-wallet
+dfx canister create fitroller --no-wallet
 dfx canister create fitoken --no-wallet
 echo
 dfx build utoken
 dfx build interestRate
+dfx build fitroller
 dfx build fitoken
 
 UTOKENID_TEXT=$(dfx canister id utoken)
@@ -44,6 +46,10 @@ echo uToken id: $UTOKENID
 IRATEID_TEXT=$(dfx canister id interestRate)
 IRATEID="principal \"$IRATEID_TEXT\""
 echo interestRate id: $IRATEID
+
+FITROLLER_TEXT=$(dfx canister id fitroller)
+FITROLLERID="principal \"$FITROLLER_TEXT\""
+echo FiTroller id: $FITROLLERID
 
 FITOKENID=$(dfx canister id fitoken)
 FITOKENID="principal \"$FITOKENID\""
@@ -56,62 +62,61 @@ echo
 HOME=$ALICE_HOME
 eval dfx canister install utoken --argument="'(\"Test uToken Logo\", \"Test uToken Name\", \"Test uToken Symbol\", 6, "1_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
 eval dfx canister install interestRate --argument="'(6.0, 24.0)'"
-eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", "110_000_000", \"$IRATEID_TEXT\", 0)'"
+eval dfx canister install fitroller
+eval dfx canister install fitoken --argument="'(\"Fi Token Logo\", \"Fi Token Name\", \"Fi Token Symbol\", 8, $ALICE_PUBLIC_KEY, \"$UTOKENID_TEXT\", \"$FITROLLER_TEXT\", "110_000_000", \"$IRATEID_TEXT\", 0)'"
 
 echo
-echo == Initial setting for utoken canister
+echo == Set up
 echo
-
 dfx canister call fitoken setFeeTo "($FEE_PUBLIC_KEY)"
 dfx canister call fitoken setFee "(10_000_000)"
 echo Verifying fee update
 dfx canister call fitoken getTokenFee
+echo
+echo == Alice transfers 500 utokens to Fee holder
+eval dfx canister call utoken transfer "'($FEE_PUBLIC_KEY, 500_000_000)'"
 
 echo
 echo == Initial token balances for Alice and fitoken balance for fee taker
-echo
+echo Alice uToken Bal = $(eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiToken Bal = $(eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo FeeTo uToken Bal = $(eval dfx canister call utoken balanceOf "'($FEE_PUBLIC_KEY)'")
+echo FeeTo FiToken Bal = $(eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'")
 
-echo Alice uToken Bal = $( \
-    eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
-echo Alice FiToken Bal = $( \
-    eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
-echo FeeTo = $( \
-    eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'" \
-)
+echo
+echo
+echo
+echo ===================== FiTroller functions =====================
+echo
+echo == Add an FiToken to the supported markets, should succeed.
+eval dfx canister call fitroller _supportMarket "'($FITOKENID)'"
+echo
 
 echo
 echo
 echo
 echo ===================== Supply tests =====================
 echo
-echo == Alice grants FiToken permission to spend 1000 of her utokens, should succeed.
-eval dfx canister call utoken approve "'($FITOKENID, 1_000_000_000)'"
-echo
-
+echo == Alice grants FiToken permission to spend 500 of her utokens, should succeed.
+eval dfx canister call utoken approve "'($FITOKENID, 500_000_000)'"
 echo == Alice mints fitokens \(exchanging 400 utokens\), should succeed.
 eval dfx canister call fitoken mintfi "400_000_000"
 echo
+HOME=$FEE_HOME
+echo == Fee holder grants FiToken permission to spend 300 utokens, should succeed.
+eval dfx canister call utoken approve "'($FITOKENID, 300_000_000)'"
+echo == Fee holder mints fitokens \(exchanging 200 utokens\), should succeed.
+eval dfx canister call fitoken mintfi "200_000_000"
+echo
 
 echo New balances:
-echo Alice uToken Bal = $( \
-    eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
-echo Alice FiToken Bal = $( \
-    eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
+echo Alice uToken Bal = $(eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiToken Bal = $(eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Fee holder uToken Bal = $(eval dfx canister call utoken balanceOf "'($FEE_PUBLIC_KEY)'")
+echo Fee holder FiToken Bal = $(eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'")
 echo
-echo FiToken canister uToken Bal = $( \
-    eval dfx canister call utoken balanceOf "'($FITOKENID)'" \
-)
-echo FiToken Total Supply = $( \
-    eval dfx canister call fitoken totalSupply \
-)
-echo
-echo Fee holder uToken Bal = $( \
-    eval dfx canister call fitoken balanceOf "'($FEE_PUBLIC_KEY)'" \
-)
+echo FiToken canister uToken Bal = $(eval dfx canister call utoken balanceOf "'($FITOKENID)'")
+echo FiToken Total Supply = $(eval dfx canister call fitoken totalSupply)
 echo
 
 echo
@@ -119,29 +124,25 @@ echo
 echo
 echo ===================== Redeem tests =====================
 echo
+HOME=$ALICE_HOME
 echo == Alice redeems fitokens \(for 100 utokens\), should succeed.
 eval dfx canister call fitoken redeem "100_000_000"
 echo
 
 echo New balances:
-echo Alice uToken Bal = $( \
-    eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
-echo Alice FiToken Bal = $( \
-    eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-)
+echo Alice uToken Bal = $(eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiToken Bal = $(eval dfx canister call fitoken balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo
-echo FiToken canister uToken Bal = $( \
-    eval dfx canister call utoken balanceOf "'($FITOKENID)'" \
-)
-echo FiToken Total Supply = $( \
-    eval dfx canister call fitoken totalSupply \
-)
+echo FiToken canister uToken Bal = $(eval dfx canister call utoken balanceOf "'($FITOKENID)'")
+echo FiToken Total Supply = $(eval dfx canister call fitoken totalSupply)
 echo
 
 echo
-echo == Alice redeems fitokens \(for 5000 utokens\), should not succeed.
+echo == Alice tries to redeem more than the platform\'s balance \(5000 utokens\), should not succeed.
 eval dfx canister call fitoken redeem "5_000_000_000"
+echo
+echo == Alice tries to redeem more she has left \(305 utokens\), should not succeed.
+eval dfx canister call fitoken redeem "305_000_000"
 echo
 
 echo
@@ -151,16 +152,10 @@ echo ===================== Borrow tests =====================
 echo
 echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
 eval dfx canister call fitoken getTotLiqInfo
+echo == Fitoken exchange rate = $(dfx canister call fitoken getExchangeRate)
 echo
-echo == Fitoken exchange rate
-eval dfx canister call fitoken getExchangeRate
-echo
-# echo == Accrue interest.
-# eval dfx canister call fitoken accrueInterest
-# echo
-# echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
-# eval dfx canister call fitoken getTotLiqInfo
-# echo
+echo == Get Alice\'s account liquidity.
+eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FITOKENID, 0, 0)'"
 echo == Alice borrows 200 utokens.
 eval dfx canister call fitoken borrow "200_000_000"
 echo
@@ -169,9 +164,16 @@ echo
 # echo
 echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
 eval dfx canister call fitoken getTotLiqInfo
+echo == Fitoken exchange rate = $(dfx canister call fitoken getExchangeRate)
 echo
-echo == Fitoken exchange rate
-eval dfx canister call fitoken getExchangeRate
+echo == Get Alice\'s account liquidity.
+eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FITOKENID, 0, 0)'"
+echo
+echo == Alice tries to REDEEM more than her liquidity allows \(70 utokens\), should not succeed.
+eval dfx canister call fitoken redeem "70_000_000"
+echo
+echo == Alice tries to BORROW more than her liquidity allows \(70 utokens\), should not succeed.
+eval dfx canister call fitoken borrow "70_000_000"
 echo
 
 
@@ -241,209 +243,13 @@ echo
 # echo == Alice grants Dan permission to spend 0 of her utokens, should success.
 # echo
 
-# eval dfx canister call utoken approve "'($DAN_PUBLIC_KEY, 0)'"
-
-# echo
-# echo == Bob grants Dan permission to spend 1 of her utokens, should success.
-# echo
-
-# HOME=$BOB_HOME
-# eval dfx canister call utoken approve "'($DAN_PUBLIC_KEY, 1_000)'"
-
-# echo
-# echo == Dan transfer 1 utoken from Bob to Alice, should success.
-# echo
-
-# HOME=$DAN_HOME
-# eval dfx canister call utoken transferFrom "'($BOB_PUBLIC_KEY, $ALICE_PUBLIC_KEY, 1_000)'"
 
 
-# echo
-# echo == Transfer 40.9 utokens from Bob to Alice, should success.
-# echo
-
-# HOME=$BOB_HOME
-# eval dfx canister call utoken transfer "'($ALICE_PUBLIC_KEY, 40_900)'"
-
-# echo
-# echo == utoken balances for Alice, Bob, Dan and FeeTo.
-# echo
-
-# echo Alice = $( \
-#     eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-# )
-# echo Bob = $( \
-#     eval dfx canister call utoken balanceOf "'($BOB_PUBLIC_KEY)'" \
-# )
-# echo Dan = $( \
-#     eval dfx canister call utoken balanceOf "'($DAN_PUBLIC_KEY)'" \
-# )
-# echo FeeTo = $( \
-#     eval dfx canister call utoken balanceOf "'($FEE_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Alice grants Dan permission to spend 50 of her utokens, should success.
-# echo
-
-# HOME=$ALICE_HOME
-# eval dfx canister call utoken approve "'($DAN_PUBLIC_KEY, 50_000)'"
-
-# echo
-# echo == Alices allowances 
-# echo
-
-# echo Alices allowance for Dan = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $DAN_PUBLIC_KEY)'" \
-# )
-# echo Alices allowance for Bob = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Dan transfers 40 utokens from Alice to Bob, should success.
-# echo
-
-# HOME=$DAN_HOME
-# eval dfx canister call utoken transferFrom "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY, 40_000)'"
-
-# echo
-# echo == Alice transfer 1 utokens To Dan
-# echo
-
-# HOME=$ALICE_HOME
-# eval dfx canister call utoken transfer "'($DAN_PUBLIC_KEY, 1_000)'"
-
-# echo
-# echo == Dan transfers 40 utokens from Alice to Bob, should Return false, as allowance remain 10, smaller than 40.
-# echo
-
-# HOME=$DAN_HOME
-# eval dfx canister call utoken transferFrom "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY, 40_000)'"
-
-# echo
-# echo == uToken balance for Alice and Bob and Dan
-# echo
-
-# echo Alice = $( \
-#     eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-# )
-# echo Bob = $( \
-#     eval dfx canister call utoken balanceOf "'($BOB_PUBLIC_KEY)'" \
-# )
-# echo Dan = $( \
-#     eval dfx canister call utoken balanceOf "'($DAN_PUBLIC_KEY)'" \
-# )
-# echo Fee = $( \
-#     eval dfx canister call utoken balanceOf "'($FEE_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Alice allowances
-# echo
-
-# echo Alices allowance for Bob = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" \
-# )
-# echo Alices allowance for Dan = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $DAN_PUBLIC_KEY)'" \
-# )
 
 
-# echo
-# echo == Alice grants Bob permission to spend 100 of her utokens
-# echo
 
-# HOME=$ALICE_HOME
-# eval dfx canister call utoken approve "'($BOB_PUBLIC_KEY, 100_000)'"
 
-# echo
-# echo == Alice allowances
-# echo
 
-# echo Alices allowance for Bob = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" \
-# )
-# echo Alices allowance for Dan = $( \
-#     eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $DAN_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Bob transfers 99 utokens from Alice to Dan
-# echo
-
-# HOME=$BOB_HOME
-# eval dfx canister call utoken transferFrom "'($ALICE_PUBLIC_KEY, $DAN_PUBLIC_KEY, 99_000)'"
-
-# echo
-# echo == Balances
-# echo
-
-# echo Alice = $( \
-#     eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'" \
-# )
-# echo Bob = $( \
-#     eval dfx canister call utoken balanceOf "'($BOB_PUBLIC_KEY)'" \
-# )
-# echo Dan = $( \
-#     eval dfx canister call utoken balanceOf "'($DAN_PUBLIC_KEY)'" \
-# )
-# echo Fee = $( \
-#     eval dfx canister call utoken balanceOf "'($FEE_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Alice allowances
-# echo
-
-# echo Alices allowance for Bob = $( eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" )
-# echo Alices allowance for Dan = $( eval dfx canister call utoken allowance "'($ALICE_PUBLIC_KEY, $DAN_PUBLIC_KEY)'" )
-
-# echo
-# echo == Dan grants Bob permission to spend 100 of this utokens, should success.
-# echo
-
-# HOME=$DAN_HOME
-# eval dfx canister call utoken approve "'($BOB_PUBLIC_KEY, 100_000)'"
-
-# echo
-# echo == Dan grants Bob permission to spend 50 of this utokens
-# echo
-
-# eval dfx canister call utoken approve "'($BOB_PUBLIC_KEY, 50_000)'"
-
-# echo
-# echo == Dan allowances
-# echo
-
-# echo Dan allowance for Bob = $( \
-#     eval dfx canister call utoken allowance "'($DAN_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" \
-# )
-# echo Dan allowance for Alice = $( \
-#     eval dfx canister call utoken allowance "'($DAN_PUBLIC_KEY, $ALICE_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == Dan change Bobs permission to spend 40 of this utokens instead of 50
-# echo
-
-# eval dfx canister call utoken approve "'($BOB_PUBLIC_KEY, 40_000)'"
-
-# echo
-# echo == Dan allowances
-# echo
-
-# echo Dan allowance for Bob = $( \
-#     eval dfx canister call utoken allowance "'($DAN_PUBLIC_KEY, $BOB_PUBLIC_KEY)'" \
-# )
-# echo Dan allowance for Alice = $( \
-#     eval dfx canister call utoken allowance "'($DAN_PUBLIC_KEY, $ALICE_PUBLIC_KEY)'" \
-# )
-
-# echo
-# echo == logo
-# echo
-# eval dfx canister call utoken logo
 
 # echo
 # echo == name
@@ -519,16 +325,6 @@ echo
 # echo == get alice getUserTransactions
 # echo
 # eval dfx canister  call utoken getUserTransactions "'($ALICE_PUBLIC_KEY, 0, 1000)'"
-
-# echo
-# echo == get bob History
-# echo
-# eval dfx canister  call utoken getUserTransactions "'($BOB_PUBLIC_KEY, 0, 1000)'"
-
-# echo
-# echo == get dan History
-# echo
-# eval dfx canister  call utoken getUserTransactions "'($DAN_PUBLIC_KEY, 0, 1000)'"
 
 # echo
 # echo == get fee History
