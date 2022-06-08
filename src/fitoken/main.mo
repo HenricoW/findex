@@ -341,6 +341,14 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
+    public shared(msg) func repay(uAmount: Nat): async Types.TxReceipt {
+        let repayRx = await repayBehalf(msg.caller, uAmount);
+        switch(repayRx) {
+            case(#Ok val) { return #Ok(val) };
+            case(#Err errType)  { return #Err(errType) };
+        };
+    };
+
     // get user's up to date fitoken bal, borrow bal & exch rate
     public func getAccountSnapshot(user: Principal): async (Nat, Nat, Nat) {
         let fiBalance = switch(fiTkn.cdata.balances.get(user)){
