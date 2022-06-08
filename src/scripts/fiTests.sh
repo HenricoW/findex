@@ -176,72 +176,33 @@ echo == Alice tries to BORROW more than her liquidity allows \(70 utokens\), sho
 eval dfx canister call fitoken borrow "70_000_000"
 echo
 
+echo
+echo ===================== Simulate passage of time =====================
+# one month in mins (30 days):         43 200
+# three months in mins (90 days):     129 600
+# six months in mins (180 days):      259 200
+eval dfx canister call fitoken accrueInterestTest "129_600"
 
-
-
-
-
-
-
-# echo
-# echo == Transfer 0 utokens from Alice to Bob, should Return false, as value is smaller than fee.
-# echo
-
-# eval dfx canister call fitoken transfer "'($BOB_PUBLIC_KEY, 0)'"
-
-# echo
-# echo == Transfer 0 utokens from Alice to Alice, should Return false, as value is smaller than fee.
-# echo
-
-# eval dfx canister call fitoken transfer "'($ALICE_PUBLIC_KEY, 0)'"
-
-# echo
-# echo == Transfer 0.1 utokens from Alice to Bob, should success, revieve 0, as value = fee.
-# echo
-
-# eval dfx canister call utoken transfer "'($BOB_PUBLIC_KEY, 100)'"
-
-# echo
-# echo == Transfer 0.1 utokens from Alice to Alice, should success, revieve 0, as value = fee.
-# echo
-
-# eval dfx canister call utoken transfer "'($ALICE_PUBLIC_KEY, 100)'"
-
-# echo
-# echo == Transfer 100 utokens from Alice to Alice, should success.
-# echo
-
-# eval dfx canister call utoken transfer "'($ALICE_PUBLIC_KEY, 100_000)'"
-
-# echo
-# echo == Transfer 2000 utokens from Alice to Alice, should Return false, as no enough balance.
-# echo
-
-# eval dfx canister call utoken transfer "'($ALICE_PUBLIC_KEY, 2_000_000)'"
-
-# echo
-# echo == Transfer 0 utokens from Bob to Bob, should Return false, as value is smaller than fee.
-# echo
-
-# HOME=$BOB_HOME
-# eval dfx canister call utoken transfer "'($ALICE_PUBLIC_KEY, 10)'"
-
-# echo
-# echo == Transfer 42 utokens from Alice to Bob, should success.
-# echo
-
-# HOME=$ALICE_HOME
-# eval dfx canister call utoken transfer "'($BOB_PUBLIC_KEY, 42_000)'"
-
-# echo
-# echo == Alice grants Dan permission to spend 1 of her utokens, should success.
-# echo
-
-# eval dfx canister call utoken approve "'($DAN_PUBLIC_KEY, 1_000)'"
-
-# echo
-# echo == Alice grants Dan permission to spend 0 of her utokens, should success.
-# echo
+echo
+echo
+echo
+echo ===================== Repay tests =====================
+echo
+echo == Get Alice\'s account liquidity.
+eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FITOKENID, 0, 0)'"
+echo Alice uToken Bal = $(eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo
+echo == Alice repays 20 utokens.
+eval dfx canister call fitoken repayBehalf "'($ALICE_PUBLIC_KEY, 20_000_000)'"
+echo
+echo Alice uToken Bal = $(eval dfx canister call utoken balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
+eval dfx canister call fitoken getTotLiqInfo
+echo == Fitoken exchange rate = $(dfx canister call fitoken getExchangeRate)
+echo
+echo == Get Alice\'s account liquidity.
+eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FITOKENID, 0, 0)'"
+echo
 
 
 
