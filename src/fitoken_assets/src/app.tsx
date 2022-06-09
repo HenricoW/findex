@@ -1,18 +1,20 @@
 import React from "react";
+import { ChakraProvider, extendTheme } from "@chakra-ui/react";
+import MainLayout from "./layouts/MainLayout";
+
+const colors = {
+  brand: {
+    700: "#4F4FB0",
+  },
+};
+
+const theme = extendTheme({ colors });
 
 const App = () => {
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <h2>This is a comp</h2>
-    </div>
+    <ChakraProvider theme={theme}>
+      <MainLayout />
+    </ChakraProvider>
   );
 };
 

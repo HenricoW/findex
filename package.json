@@ -45,6 +45,7 @@
     "last 2 edge version"
   ],
   "dependencies": {
+    "@chakra-ui/icons": "^2.0.2",
     "@chakra-ui/react": "^2.2.1",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
@@ -52,6 +53,7 @@
     "framer-motion": "^6.3.11",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
+    "react-icons": "^4.4.0",
     "ts-loader": "^9.3.0"
   }
 }
