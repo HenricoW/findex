@@ -1,13 +1,15 @@
 import React from "react";
-import { Box, Flex, Image, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Image, Stack, Text, useColorMode } from "@chakra-ui/react";
 import { sidebarLinks } from "../../routes";
 import SidebarLink from "./SidebarLink";
 import Separator from "../Misc/Separator";
+import { sidebarWidth } from "../../layouts/MainLayout";
 
 const Sidebar = () => {
+  const { colorMode, toggleColorMode } = useColorMode();
   return (
     <>
-      <Box display={{ sm: "none", xl: "block" }} w="250px" px=".5em" position="fixed">
+      <Box display={{ base: "none", xl: "block" }} w={sidebarWidth} px=".5em" position="fixed">
         <Box pt={"25px"} mb="12px">
           <Image src={"img/avatars/avatar1.png"} w="130px" h="130px" borderRadius="50%" m="20px auto" />
           <Text fontSize="md" textAlign="center" mb="20px">
@@ -37,6 +39,10 @@ const Sidebar = () => {
             <SidebarLink key={linkData.name} name={linkData.name} icon={linkData.icon} />
           ))}
         </Stack>
+        <Separator />
+        <Button display="block" m="3em auto 0" onClick={toggleColorMode}>
+          Toggle {colorMode === "light" ? "Dark" : "Light"}
+        </Button>
       </Box>
     </>
   );
