@@ -17,7 +17,7 @@ import Cap "../cap/Cap";
 import Root "../cap/Root";
 import Bool "mo:base/Debug";
 
-import IfiToken "IfiToken"
+import IfiToken "../modules/IfiToken"
 
 shared(msg) actor class FiToken(
     _logo: Text,

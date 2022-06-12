@@ -2,7 +2,7 @@ import Nat "mo:base/Nat";
 import Float "mo:base/Float";
 import Bool "mo:base/Debug";
 import Int "mo:base/Int";
-import IiRateModel "./IInterestRateModel"
+import IiRateModel "../modules/IInterestRateModel"
 
 actor class IntRateModel(annualBaseRate: Float, annualSlopeRate: Float) : async IiRateModel.Interface {
     // supplied rates to be in normal annual %ge values (ex. 35.6 %)
