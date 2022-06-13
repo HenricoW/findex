@@ -11,6 +11,8 @@ export const RocketIcon = (props) => <Icon as={FaRocket} {...props} />;
 
 export const DashboardLogo = (props) => <Icon as={MdOutlineDashboard} {...props} />;
 
+export const GlobeIcon = (props) => <Icon as={FaGlobeAfrica} {...props} />;
+
 export const TriUpIcon = (props) => <Icon as={MdArrowDropUp} {...props} />;
 
 export const TriDownIcon = (props) => <Icon as={MdArrowDropDown} {...props} />;
