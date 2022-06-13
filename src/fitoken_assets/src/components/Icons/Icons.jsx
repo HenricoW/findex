@@ -14,3 +14,5 @@ export const DashboardLogo = (props) => <Icon as={MdOutlineDashboard} {...props}
 export const TriUpIcon = (props) => <Icon as={MdArrowDropUp} {...props} />;
 
 export const TriDownIcon = (props) => <Icon as={MdArrowDropDown} {...props} />;
+
+export const MenuIcon = (props) => <Icon as={MdMenu} {...props} />;

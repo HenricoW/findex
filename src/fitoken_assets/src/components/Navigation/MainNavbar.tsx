@@ -1,6 +1,7 @@
 import React from "react";
-import { Box, Button, Flex, Link, useColorModeValue } from "@chakra-ui/react";
+import { Box, Button, Flex, IconButton, Link, useColorModeValue } from "@chakra-ui/react";
 import { sidebarWidth } from "../../layouts/MainLayout";
+import { MenuIcon } from "../Icons/Icons";
 
 interface MainNavbarProps {
   brandText: string;
@@ -64,9 +65,13 @@ export default function MainNavbar({ brandText, onOpen }: MainNavbarProps) {
         </Link>
       </Box>
       <Flex gap="20px">
-        <Button display={{ base: "block", md: "none" }} onClick={onOpen}>
-          Menu
-        </Button>
+        <IconButton
+          aria-label="menu"
+          display={{ base: "block", lg: "none" }}
+          variant="ghost"
+          icon={<MenuIcon fontSize="1.8em" />}
+          onClick={onOpen}
+        />
         <Button>Connect</Button>
       </Flex>
     </Flex>
