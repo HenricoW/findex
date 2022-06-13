@@ -9,6 +9,7 @@ import PriceChart from "../components/Charts/PriceChart";
 import CardGen from "../components/Cards/CardGen";
 
 export const sidebarWidth = "280px";
+export const navHeight = "111px";
 
 const MainLayout = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();

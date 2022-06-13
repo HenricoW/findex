@@ -42,7 +42,7 @@ export default function MainNavbar({ brandText, onOpen }: MainNavbarProps) {
       px={{ base: "0", md: "30px" }}
       pt="8px"
       top={{ base: "5px", md: "18px" }}
-      w={{ base: `calc(100vw - 2 * ${marginX})`, xl: `calc(100vw - 2 * ${marginX} - ${sidebarWidth})` }}
+      w={{ base: `calc(100vw - 2 * ${marginX})`, lg: `calc(100vw - 2 * ${marginX} - ${sidebarWidth})` }}
     >
       <Box>
         <Link

@@ -9,7 +9,7 @@ const Sidebar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   return (
     <>
-      <Box display={{ base: "none", xl: "block" }} w={sidebarWidth} px=".5em" position="fixed">
+      <Box display={{ base: "none", lg: "block" }} w={sidebarWidth} px=".5em" position="fixed">
         <Box pt={"25px"} mb="12px">
           <Image src={"img/avatars/avatar1.png"} w="130px" h="130px" borderRadius="50%" m="20px auto" />
           <Text fontSize="md" textAlign="center" mb="20px">
