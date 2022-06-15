@@ -9,9 +9,10 @@
     "Canister"
   ],
   "scripts": {
-    "build": "webpack",
+    "dev": "next dev",
+    "build": "next build && next export",
+    "start": "next start",
     "prebuild": "npm run copy:types",
-    "start": "webpack serve --mode development --env development",
     "prestart": "npm run copy:types",
     "copy:types": "rsync -avr .dfx/$(echo ${DFX_NETWORK:-'**'})/canisters/** --exclude='assets/' --exclude='idl/' --exclude='*.wasm' --exclude='*.most' --delete src/declarations"
   },
@@ -19,8 +20,7 @@
     "@dfinity/agent": "0.11.2",
     "@dfinity/candid": "0.11.2",
     "@dfinity/principal": "0.11.2",
-    "@types/react": "^18.0.12",
-    "@types/react-dom": "^18.0.5",
+    "@types/react": "^17.0.45",
     "assert": "2.0.0",
     "buffer": "6.0.3",
     "copy-webpack-plugin": "^9.0.1",
@@ -45,17 +45,12 @@
     "last 2 edge version"
   ],
   "dependencies": {
-    "@chakra-ui/icons": "^2.0.2",
-    "@chakra-ui/react": "^2.2.1",
-    "@emotion/react": "^11.9.0",
-    "@emotion/styled": "^11.8.1",
-    "apexcharts": "^3.35.3",
-    "css-loader": "^6.7.1",
-    "framer-motion": "^6.3.11",
-    "react": "^18.1.0",
-    "react-apexcharts": "^1.4.0",
-    "react-dom": "^18.1.0",
-    "react-icons": "^4.4.0",
-    "ts-loader": "^9.3.0"
+    "@chakra-ui/react": "^1.6.10",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "framer-motion": "^4",
+    "next": "^12.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }

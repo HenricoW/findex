@@ -19,9 +19,9 @@
     "fitoken_assets": {
       "dependencies": ["fitoken"],
       "frontend": {
-        "entrypoint": "src/fitoken_assets/src/index.html"
+        "entrypoint": "./out/index.html"
       },
-      "source": ["src/fitoken_assets/assets", "dist/fitoken_assets/"],
+      "source": ["./out"],
       "type": "assets"
     }
   },
