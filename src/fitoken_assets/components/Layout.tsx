@@ -15,7 +15,7 @@ export const initAppState: AppStateType = {
   web3: {
     agent: new HttpAgent({ host: "http://127.0.0.1:8000" }),
   },
-  contracts: null,
+  canisters: {},
 };
 
 type LayoutProps = {

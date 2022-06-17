@@ -4,23 +4,18 @@ import { Box, Heading, HStack, Text } from "@chakra-ui/layout";
 import styles from "../styles/Navbar.module.css";
 import { shortAddress } from "../utils/helpers";
 import { AppContext, AppDispatchContext } from "./Layout";
-import { idlFactory as dip20Idl } from "../../declarations/mwicp";
-import { idlFactory as fitokenIdl } from "../../declarations/fiwicp";
 import { Principal } from "@dfinity/principal";
 import { Actor, ActorSubclass, HttpAgent } from "@dfinity/agent";
 import { Secp256k1KeyIdentity } from "@dfinity/identity";
-import { devEnv } from "../../../pages";
+import { appCanisters, devEnv } from "../../../pages";
 
 // temp
-const anonUserAddr = "2vxsx-fae";
-const fiWicpId = "l7jw7-difaq-aaaaa-aaaaa-c";
-const mwicp = "ai7t5-aibaq-aaaaa-aaaaa-c";
 // const whitelist = [mwicp];
 const alicePrinc = Principal.fromText("oj5h2-fpzeg-dzqv5-7h5y4-huhtb-pp34d-36hyt-lowk6-cy3xz-lfnq2-7ae");
 // end temp
 
 function Navbar() {
-  const { isUserConnected, userData, web3 } = useContext(AppContext);
+  const { isUserConnected, userData, canisters } = useContext(AppContext);
   const appDispatch = useContext(AppDispatchContext);
 
   const [netwName, setNetwName] = useState<"Local" | "IC Mainnet">("Local");
@@ -34,16 +29,23 @@ function Navbar() {
     onConnect();
   };
 
-  const getBalance = async () => {
-    const mwicpActor: ActorSubclass = Actor.createActor(dip20Idl, {
-      agent: web3.agent,
-      canisterId: mwicp,
-    });
+  const getCanisters = (agent: HttpAgent) => {
+    console.log("Setting up canisters...");
+    let canisters: { [ticker: string]: ActorSubclass } = {};
+    for (let [ticker, canData] of Object.entries(appCanisters)) {
+      canisters[ticker] = Actor.createActor(canData.idl, {
+        agent,
+        canisterId: canData.id,
+      });
+    }
+    console.log("the canisters:", canisters);
 
-    const fiwicpActor: ActorSubclass = Actor.createActor(fitokenIdl, {
-      agent: web3.agent,
-      canisterId: fiWicpId,
-    });
+    appDispatch({ target: "canisters", type: "setCanisters", payload: canisters });
+  };
+
+  const getMwicpBalance = async () => {
+    console.log("the canisters:", canisters);
+    const mwicpActor = canisters["mWICP"];
 
     const abal = await mwicpActor.balanceOf(alicePrinc);
     console.log("Alice's mWICP balance: ", abal);
@@ -73,6 +75,8 @@ function Navbar() {
     }
     appDispatch({ target: "web3", type: "setWeb3", payload: agent });
     // END: local replica
+
+    getCanisters(agent);
 
     const principalStr = test_id.getPrincipal().toText();
     const theUserData = { ...userData, address: principalStr };
@@ -119,7 +123,7 @@ function Navbar() {
               >
                 {netwName}
               </Text>
-              <Button variant="outline" colorScheme="blue" onClick={getBalance}>
+              <Button variant="outline" colorScheme="blue" onClick={getMwicpBalance}>
                 Get Balance
               </Button>
               <HStack spacing="3">

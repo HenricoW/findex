@@ -1,4 +1,4 @@
-import { HttpAgent } from "@dfinity/agent";
+import { ActorSubclass, HttpAgent } from "@dfinity/agent";
 import { initAppState } from "../../components/Layout";
 import { getTotTokensValue } from "../../utils/helpers";
 import { allTokenData, defaultUserAmounts } from "../../utils/initialData";
@@ -117,15 +117,15 @@ const contractsReducer = (
   action: {
     type: string;
     payload: {
-      [contrName: string]: any;
-    } | null;
+      [contrName: string]: ActorSubclass;
+    };
   }
 ) => {
   switch (action.type) {
-    case "setContracts":
-      return { ...state, contracts: action.payload };
-    case "clearContracts":
-      return { ...state, contracts: null };
+    case "setCanisters":
+      return { ...state, canisters: action.payload };
+    case "clearCanisters":
+      return { ...state, canisters: {} };
     default:
       return state;
   }
@@ -134,7 +134,7 @@ const contractsReducer = (
 export type AppActionType = {
   type: string;
   payload: any;
-  target: "user" | "token" | "web3" | "contracts";
+  target: "user" | "token" | "web3" | "canisters";
 };
 
 export const appReducer = (state: AppStateType, action: AppActionType) => {
@@ -145,7 +145,7 @@ export const appReducer = (state: AppStateType, action: AppActionType) => {
       return tokenReducer(state, { type: action.type, payload: action.payload });
     case "web3":
       return web3Reducer(state, { type: action.type, payload: action.payload });
-    case "contracts":
+    case "canisters":
       return contractsReducer(state, { type: action.type, payload: action.payload });
     default:
       return state;

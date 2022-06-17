@@ -10,27 +10,27 @@ import { ZERO_ADDR } from "../utils/initialData";
 import { getTknPrices, getUserDepositAmounts, getWalletBalances } from "../utils/helpers";
 
 function AccSummary() {
-  const { userData, userAmounts, isUserConnected, contracts, web3 } = useContext(AppContext);
+  const { userData, userAmounts, isUserConnected, canisters } = useContext(AppContext);
   const appDispatch = useContext(AppDispatchContext);
 
   const tknDataDispatch = useContext(TokenDispatchContext);
 
   useEffect(() => {
     (async () => {
-      if (contracts) {
+      if (canisters) {
         if (userData.address !== ZERO_ADDR) {
-          const payload = await getWalletBalances(userData.address, contracts);
+          const payload = await getWalletBalances(userData.address, canisters);
           appDispatch({ type: "setWalletAmts", payload, target: "user" });
         }
 
         console.log("app wallet: ", userData.appWallet);
         if (userData.appWallet !== ZERO_ADDR) {
-          const payload = await getUserDepositAmounts(userData.appWallet, contracts);
+          const payload = await getUserDepositAmounts(userData.appWallet, canisters);
           appDispatch({ type: "setAccAmts", payload, target: "user" });
         }
       }
     })();
-  }, [contracts, userData.address, userData.appWallet]);
+  }, [canisters, userData.address, userData.appWallet]);
 
   useEffect(() => {
     (async () => {

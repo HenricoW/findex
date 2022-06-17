@@ -1,3 +1,4 @@
+import { ActorSubclass, HttpAgent } from "@dfinity/agent";
 import { defaultUserAmounts } from "./initialData";
 
 export type tokenDataType = {
@@ -43,13 +44,11 @@ export type AppStateType = {
     totalLoaned: number;
   };
   web3: {
-    // TODO: REMOVE - NOT NEEDED
-    provider: any;
-    signer: any;
+    agent: HttpAgent;
   };
-  contracts: {
-    [contrName: string]: any; // TODO: REMOVE - NOT NEEDED
-  } | null;
+  canisters: {
+    [contrName: string]: ActorSubclass; // TODO: REMOVE - NOT NEEDED
+  };
   isUserConnected: boolean;
   selectedTicker: string;
 };
