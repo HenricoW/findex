@@ -1,10 +1,18 @@
 {
   "canisters": {
-    "fitoken": {
+    "fixtc": {
       "main": "src/fitoken/main.mo",
       "type": "motoko"
     },
-    "utoken": {
+    "fiwicp": {
+      "main": "src/fitoken/main.mo",
+      "type": "motoko"
+    },
+    "mxtc": {
+      "main": "src/DIP20/utoken.mo",
+      "type": "motoko"
+    },
+    "mwicp": {
       "main": "src/DIP20/utoken.mo",
       "type": "motoko"
     },
