@@ -1,3 +1,4 @@
+import { HttpAgent } from "@dfinity/agent";
 import { initAppState } from "../../components/Layout";
 import { getTotTokensValue } from "../../utils/helpers";
 import { allTokenData, defaultUserAmounts } from "../../utils/initialData";
@@ -100,12 +101,12 @@ const tokenReducer = (state: AppStateType, action: { type: string; payload: stri
   }
 };
 
-const web3Reducer = (state: AppStateType, action: { type: string; payload: { provider: any; signer: any } }) => {
+const web3Reducer = (state: AppStateType, action: { type: string; payload: HttpAgent }) => {
   switch (action.type) {
     case "setWeb3":
-      return { ...state, web3: { provider: action.payload.provider, signer: action.payload.signer } };
+      return { ...state, web3: { agent: action.payload } };
     case "clearWeb3":
-      return { ...state, web3: { provider: null, signer: null } };
+      return { ...state, web3: { agent: initAppState.web3.agent } };
     default:
       return state;
   }

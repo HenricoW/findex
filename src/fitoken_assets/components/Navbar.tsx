@@ -7,60 +7,41 @@ import { AppContext, AppDispatchContext } from "./Layout";
 import { idlFactory as dip20Idl } from "../../declarations/mwicp";
 import { idlFactory as fitokenIdl } from "../../declarations/fiwicp";
 import { Principal } from "@dfinity/principal";
-import { Actor, HttpAgent } from "@dfinity/agent";
+import { Actor, ActorSubclass, HttpAgent } from "@dfinity/agent";
 import { Secp256k1KeyIdentity } from "@dfinity/identity";
+import { devEnv } from "../../../pages";
 
 // temp
 const anonUserAddr = "2vxsx-fae";
 const fiWicpId = "l7jw7-difaq-aaaaa-aaaaa-c";
 const mwicp = "ai7t5-aibaq-aaaaa-aaaaa-c";
-// const host = "https://mainnet.dfinity.network";
-const host = "http://127.0.0.1:8000";
+// const whitelist = [mwicp];
 const alicePrinc = Principal.fromText("oj5h2-fpzeg-dzqv5-7h5y4-huhtb-pp34d-36hyt-lowk6-cy3xz-lfnq2-7ae");
 // end temp
 
 function Navbar() {
-  const { isUserConnected, userData } = useContext(AppContext);
+  const { isUserConnected, userData, web3 } = useContext(AppContext);
   const appDispatch = useContext(AppDispatchContext);
 
   const [netwName, setNetwName] = useState<"Local" | "IC Mainnet">("Local");
+  // const [mwicpActor, setMwicpActor] = useState<any>(undefined);
   const [userPrinc, setUserPrinc] = useState<Principal>(Principal.fromText("2vxsx-fae"));
   const [userIdentity, setUserIdentity] = useState<Secp256k1KeyIdentity | undefined>(undefined);
+
+  const host = devEnv === "local" ? "http://127.0.0.1:8000" : "https://mainnet.dfinity.network";
 
   const plugSignIn = () => {
     onConnect();
   };
 
-  // temp
-  const getIdentity = () => {
-    const rawBuffer = new Uint8Array([
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    ]);
-    const test_id = Secp256k1KeyIdentity.generate(rawBuffer);
-    console.log("Created identity:", test_id.getPrincipal().toString());
-    setUserIdentity(test_id);
-    setUserPrinc(test_id.getPrincipal());
-  };
-  // end temp
-
   const getBalance = async () => {
-    const agent = new HttpAgent({ host, identity: userIdentity });
-
-    // Fetch root key for certificate validation during development
-    if (process.env.NODE_ENV !== "production") {
-      agent.fetchRootKey().catch((err) => {
-        console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
-        console.error(err);
-      });
-    }
-
-    const mwicpActor = Actor.createActor(dip20Idl, {
-      agent,
+    const mwicpActor: ActorSubclass = Actor.createActor(dip20Idl, {
+      agent: web3.agent,
       canisterId: mwicp,
     });
 
-    const fiwicpActor = Actor.createActor(fitokenIdl, {
-      agent,
+    const fiwicpActor: ActorSubclass = Actor.createActor(fitokenIdl, {
+      agent: web3.agent,
       canisterId: fiWicpId,
     });
 
@@ -71,8 +52,31 @@ function Navbar() {
   };
 
   const onConnect = () => {
-    const theUserData = { ...userData, address: anonUserAddr };
-    appDispatch({ type: "signIn", payload: { ...theUserData, appWallet: anonUserAddr }, target: "user" });
+  // temp
+  const getIdentity = () => {
+
+    // NOTE: local replica
+    const rawBuffer = new Uint8Array([
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    ]);
+    const test_id = Secp256k1KeyIdentity.generate(rawBuffer);
+    console.log("Created identity:", test_id.getPrincipal().toString());
+    setUserIdentity(test_id);
+    setUserPrinc(test_id.getPrincipal());
+
+    const agent = new HttpAgent({ host, identity: test_id });
+    if (process.env.NODE_ENV !== "production") {
+      agent.fetchRootKey().catch((err) => {
+        console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
+        console.error(err);
+      });
+    }
+    appDispatch({ target: "web3", type: "setWeb3", payload: agent });
+    // END: local replica
+
+    const principalStr = test_id.getPrincipal().toText();
+    const theUserData = { ...userData, address: principalStr };
+    appDispatch({ type: "signIn", payload: { ...theUserData, appWallet: principalStr }, target: "user" });
 
     // TODO: commit to local storage
     // window.localStorage.setItem(
@@ -131,9 +135,6 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Button variant="outline" colorScheme="blue" onClick={getIdentity}>
-                Get ID
-              </Button>
               <Button variant="outline" colorScheme="twitter" onClick={plugSignIn}>
                 CONNECT
               </Button>

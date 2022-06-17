@@ -9,6 +9,10 @@ import TokenBars from "../src/fitoken_assets/components/TokenBars";
 import ContractActions from "../src/fitoken_assets/components/ContractActions";
 import { allTokenData } from "../src/fitoken_assets/utils/initialData";
 import { tokenDataType } from "../src/fitoken_assets/utils/types";
+// temp
+const canisterId = "";
+export const devEnv: "local" | "ic" = "local";
+// end temp
 
 // app state independent of user action
 export const TokenContext = createContext<tokenDataType[]>([]);

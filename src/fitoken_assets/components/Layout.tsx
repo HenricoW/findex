@@ -4,6 +4,7 @@ import { AppActionType, appReducer } from "../store/reducers/Reducers";
 import { allTokenData, defaultUserAmounts, userData } from "../utils/initialData";
 import { AppStateType } from "../utils/types";
 import Navbar from "./Navbar";
+import { HttpAgent } from "@dfinity/agent";
 
 export const initAppState: AppStateType = {
   isUserConnected: false,
@@ -12,8 +13,7 @@ export const initAppState: AppStateType = {
   selectedToken: allTokenData[0], // default value
   userAmounts: defaultUserAmounts,
   web3: {
-    provider: null,
-    signer: null,
+    agent: new HttpAgent({ host: "http://127.0.0.1:8000" }),
   },
   contracts: null,
 };
