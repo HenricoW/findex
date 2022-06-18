@@ -14,3 +14,7 @@
 node_modules/
 dist/
 src/declarations
+_*.js*
+public
+src/_fitoken_assets
+.next
