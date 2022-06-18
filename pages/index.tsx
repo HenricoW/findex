@@ -24,6 +24,14 @@ export const appCanisters = {
     id: "l7jw7-difaq-aaaaa-aaaaa-c",
     idl: fitokenIdl,
   },
+  mXTC: {
+    id: "cvccv-qqaaq-aaaaa-aaaaa-c",
+    idl: dip20Idl,
+  },
+  fiXTC: {
+    id: "jcuhx-tqeaq-aaaaa-aaaaa-c",
+    idl: fitokenIdl,
+  },
 };
 // end temp
 

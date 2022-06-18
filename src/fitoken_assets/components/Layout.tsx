@@ -13,7 +13,17 @@ export const initAppState: AppStateType = {
   selectedToken: allTokenData[0], // default value
   userAmounts: defaultUserAmounts,
   web3: {
-    agent: new HttpAgent({ host: "http://127.0.0.1:8000" }),
+    agent: (() => {
+      const ag = new HttpAgent({ host: "http://127.0.0.1:8000" });
+      if (process.env.NODE_ENV !== "production") {
+        ag.fetchRootKey().catch((err) => {
+          console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
+          console.error(err);
+        });
+      }
+
+      return ag;
+    })(),
   },
   canisters: {},
 };

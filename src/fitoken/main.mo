@@ -435,6 +435,29 @@ shared(msg) actor class FiToken(
         #Ok(exchRate)
     };
 
+    // get borrow rate (per minute)
+    public func getBorrowRatePerMin(): async Nat {
+        // get current parameters
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));
+        let borrows_i = fiTkn.cdata.totalBorrows_;
+        let reserves_i = fiTkn.cdata.totalReserves_;
+
+        let borrowRateMantissa = await interestRateModel.getBorrowRate(cash_i, borrows_i, reserves_i);
+        borrowRateMantissa
+    };
+
+    // get supply rate (per minute)
+    public func getSupplyRatePerMin(): async Nat {
+        // get current parameters
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));
+        let borrows_i = fiTkn.cdata.totalBorrows_;
+        let reserves_i = fiTkn.cdata.totalReserves_;
+        let resFactor = fiTkn.reserveFactorMantissa;
+
+        let supplyRateMantissa = await interestRateModel.getSupplyRate(cash_i, borrows_i, reserves_i, resFactor);
+        supplyRateMantissa
+    };
+
     // get borrow balance internal
 
     public query func logo() : async Text { fiTkn.cdata.logo_ };

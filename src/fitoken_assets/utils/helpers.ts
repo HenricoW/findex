@@ -1,3 +1,5 @@
+import { ActorSubclass } from "@dfinity/agent";
+import { appCanisters } from "../../../pages";
 import { allTokenData } from "./initialData";
 import { configInputType, tokenDataType, tokenValues } from "./types";
 
@@ -104,11 +106,30 @@ export const inputDispatchConfig: {
   },
 };
 
-export const getTokenRates = async (contracts: { [ticker: string]: any }) => {
+export const getTokenRates = async (canisters: { [ticker: string]: ActorSubclass }) => {
+  // get only fitoken actors
+  const tickers = Object.keys(appCanisters).filter((tckr) => tckr.startsWith("fi"));
+  console.log(canisters);
+
+  // fetch per min rates
+  let sRatesPerMin: number[] = [],
+    bRatesPerMin: number[] = [];
+  if (Object.keys(canisters).length > 0) {
+    sRatesPerMin = (await Promise.all(tickers.map((ticker) => canisters[ticker].getSupplyRatePerMin()))) as number[];
+    bRatesPerMin = (await Promise.all(tickers.map((ticker) => canisters[ticker].getBorrowRatePerMin()))) as number[];
+  }
+
+  // compile results
+  const ratesAPY = [...sRatesPerMin, ...bRatesPerMin].map((val) => (Number(val) * 60 * 24 * 365) / 1_000_000);
+
   // temp
-  let supplyRates = [1.23, 2.34];
-  let borrowRates = [4.23, 4.34];
+  let supplyRates = [0, 0];
+  let borrowRates = [0, 0];
   // end temp
+  if (ratesAPY.length > 0) {
+    supplyRates = ratesAPY.slice(0, ratesAPY.length / 2);
+    borrowRates = ratesAPY.slice(ratesAPY.length / 2);
+  }
 
   console.log({ supply: supplyRates, borrow: borrowRates });
 
