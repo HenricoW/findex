@@ -15,7 +15,12 @@ import { idlFactory as fitokenIdl } from "../src/declarations/fiwicp";
 // temp
 const canisterId = "";
 export const devEnv: "local" | "ic" = "local";
-export const appCanisters = {
+export const appCanisters: {
+  [ticker: string]: {
+    id: string;
+    idl: any;
+  };
+} = {
   mWICP: {
     id: "ai7t5-aibaq-aaaaa-aaaaa-c",
     idl: dip20Idl,
