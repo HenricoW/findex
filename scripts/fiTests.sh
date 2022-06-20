@@ -86,9 +86,11 @@ dfx canister call fixtc setFeeTo "($FEE_PUBLIC_KEY)"
 dfx canister call fixtc setFee "(10_000_000)"
 echo Verifying fee update
 dfx canister call fixtc getTokenFee
+eval dfx canister call mxtc transfer "'($FEE_PUBLIC_KEY, 500_000_000)'"
 echo
-echo == Alice transfers 500 utokens to Fee holder
-eval dfx canister call utoken transfer "'($FEE_PUBLIC_KEY, 500_000_000)'"
+echo == Alice transfers some of each token to EOA
+eval dfx canister call mxtc transfer "'(principal \"h4ln2-qsfaz-na6by-g6fu6-vizab-bvlnv-h3hdq-5yjr3-vgwvt-bh5ka-tqe\", 500_000_000)'"
+eval dfx canister call mwicp transfer "'(principal \"h4ln2-qsfaz-na6by-g6fu6-vizab-bvlnv-h3hdq-5yjr3-vgwvt-bh5ka-tqe\", 1_000_000_000)'"
 
 echo
 echo == Initial token balances for Alice and fixtc balance for fee taker

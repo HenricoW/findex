@@ -59,7 +59,7 @@ function Navbar() {
 
     // NOTE: local replica
     const rawBuffer = new Uint8Array([
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 1,
     ]);
     const test_id = Secp256k1KeyIdentity.generate(rawBuffer);
     console.log("Created identity:", test_id.getPrincipal().toString());

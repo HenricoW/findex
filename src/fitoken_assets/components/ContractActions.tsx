@@ -19,33 +19,38 @@ function ContractActions({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const onFormSubmit = async (fieldAction: string, value: number) => {
+  const onFormSubmit = async (fieldAction: string, val: number) => {
     // console.log(canisters);
     const tckr = selectedToken.ticker;
     if (Object.keys(canisters).length > 0) {
-      const uToken = canisters[`m${tckr}`];
-      const fiTokenAddr = appCanisters[`fi${tckr}`].id;
-      const fiToken = canisters[`fi${tckr}`];
+      const uToken = canisters[tckr];
+      const fiticker = tckr.startsWith("m") ? tckr.replace("m", "fi") : `fi${tckr}`; // NOTE: for mock and actual tokens
+      const fiTokenAddr = appCanisters[fiticker].id;
+      const fiToken = canisters[fiticker];
 
       console.log("field action: ", fieldAction);
+      const value = val * Math.pow(10, appCanisters[tckr].tokenDecimals);
 
       switch (fieldAction) {
         case "deposit":
-          uToken
-            .approve(Principal.fromText(fiTokenAddr), value)
-            .then(() => {
-              fiToken.mintfi(value);
-            })
-            .catch((err) => console.log(err));
+          console.log("submit value", value);
+          uToken.approve(Principal.fromText(fiTokenAddr), value).then(() => {
+            fiToken.mintfi(value).then((resp) => console.log(resp));
+          });
           break;
         case "withdraw":
-          fiToken.redeem(value).catch((err) => console.log(err));
+          fiToken.redeem(value).then((resp) => console.log(resp));
           break;
         case "borrow":
-          fiToken.borrow(value).catch((err) => console.log(err));
+          fiToken.borrow(value).then((resp) => console.log(resp));
           break;
         case "repay":
-          fiToken.repay(value).catch((err) => console.log(err));
+          console.log("submit value", value);
+          uToken.approve(Principal.fromText(fiTokenAddr), 100 * value).then((resp) => {
+            console.log(resp);
+            // fiToken.repay(value).then((resp) => console.log(resp));
+            fiToken.repayBehalf(Principal.fromText(userData.appWallet), value).then((resp) => console.log(resp));
+          });
           break;
         default:
           return;

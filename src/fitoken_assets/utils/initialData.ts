@@ -2,21 +2,21 @@ import { tokenDataType, userDataType } from "./types";
 
 export const allTokenData: tokenDataType[] = [
   {
-    ticker: "WICP",
+    ticker: "mWICP",
     api_id: "internet-computer",
     imgUrl: "/wBTC.svg", // TODO: FIX THIS
-    principal: "0xa1faa15655b0e7b6b6470ed3d096390e6ad93abb",
+    principal: "",
     saveRate: 0.0,
     borrRate: 0.0,
     price: 52.33,
     tokenDecimals: 6,
-    displayDecimals: 4,
+    displayDecimals: 3,
   },
   {
-    ticker: "XTC",
+    ticker: "mXTC",
     api_id: "basic-attention-token", // TODO: FIX THIS
     imgUrl: "/DAI.svg", // TODO: FIX THIS
-    principal: "0x390e6ad93aa1f470eaa15656bb5b0e7b6b6d3d09",
+    principal: "",
     saveRate: 0.0,
     borrRate: 0.0,
     price: 1.33,
