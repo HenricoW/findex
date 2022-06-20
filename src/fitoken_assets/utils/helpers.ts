@@ -151,22 +151,23 @@ export const getTokenRates = async (canisters: { [ticker: string]: ActorSubclass
 export const getTickerList = () => allTokenData.map((tkn) => tkn.ticker);
 
 export const getTknPrices = async () => {
-  const cgkoIDs = allTokenData.map((tkn) => tkn.api_id);
-  const fmtTkns = cgkoIDs.join("%2C");
-  const uri = `https://api.coingecko.com/api/v3/simple/price?ids=${fmtTkns}&vs_currencies=usd`;
+  const fmtTkns = allTokenData.map((tkn) => tkn.api_id).join("%2C");
+  const uri = `https://api.coingecko.com/api/v3/simple/price?ids=${fmtTkns}&vs_currencies=usd%2Cxdr`;
 
   let data: {
     [id: string]: {
       usd: number;
+      xdr: number;
     };
   };
 
-  // TODO: FILTER OUT 'undefined' RESULTS (like XTC)
   try {
     const resp = await fetch(uri);
     data = await resp.json();
     console.log("from CG:", data);
-    const prices = cgkoIDs.map((coin_id) => data[coin_id!].usd);
+    const prices = allTokenData.map((tkn) => {
+      return tkn.ticker !== "mXTC" ? data[tkn.api_id!].usd : data[tkn.api_id!].usd / data[tkn.api_id!].xdr; // <===== NOTE: for mock token
+    });
 
     return prices;
   } catch (err) {

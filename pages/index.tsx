@@ -35,7 +35,7 @@ export const appCanisters: {
   mXTC: {
     id: "cvccv-qqaaq-aaaaa-aaaaa-c",
     idl: dip20Idl,
-    tokenDecimals: 8,
+    tokenDecimals: 6,
   },
   fiXTC: {
     id: "jcuhx-tqeaq-aaaaa-aaaaa-c",

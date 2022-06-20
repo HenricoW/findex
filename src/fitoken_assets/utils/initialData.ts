@@ -4,23 +4,23 @@ export const allTokenData: tokenDataType[] = [
   {
     ticker: "mWICP",
     api_id: "internet-computer",
-    imgUrl: "/wBTC.svg", // TODO: FIX THIS
+    imgUrl: "/ICP.svg",
     principal: "",
     saveRate: 0.0,
     borrRate: 0.0,
-    price: 52.33,
+    price: 1.0,
     tokenDecimals: 6,
     displayDecimals: 3,
   },
   {
     ticker: "mXTC",
-    api_id: "basic-attention-token", // TODO: FIX THIS
-    imgUrl: "/DAI.svg", // TODO: FIX THIS
+    api_id: "usd-coin",
+    imgUrl: "/XTC.jfif",
     principal: "",
     saveRate: 0.0,
     borrRate: 0.0,
-    price: 1.33,
-    tokenDecimals: 8,
+    price: 1.0,
+    tokenDecimals: 6,
     displayDecimals: 3,
   },
 ];
