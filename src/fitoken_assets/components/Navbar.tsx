@@ -15,7 +15,7 @@ const alicePrinc = Principal.fromText("oj5h2-fpzeg-dzqv5-7h5y4-huhtb-pp34d-36hyt
 // end temp
 
 function Navbar() {
-  const { isUserConnected, userData, canisters } = useContext(AppContext);
+  const { isUserConnected, userData } = useContext(AppContext);
   const appDispatch = useContext(AppDispatchContext);
 
   const [netwName, setNetwName] = useState<"Local" | "IC Mainnet">("Local");
@@ -80,7 +80,7 @@ function Navbar() {
 
     const principalStr = test_id.getPrincipal().toText();
     const theUserData = { ...userData, address: principalStr };
-    appDispatch({ type: "signIn", payload: { ...theUserData, appWallet: principalStr }, target: "user" });
+    appDispatch({ target: "user", type: "signIn", payload: { ...theUserData, appWallet: principalStr } });
 
     // TODO: commit to local storage
     // window.localStorage.setItem(
@@ -108,8 +108,8 @@ function Navbar() {
     <Box as="header" py={5} px={6} bg="gray.700">
       <Box as="nav" d="flex" alignItems="center" justifyContent="space-between">
         <HStack spacing="4">
-          <img height="40px" width="40px" src="/aave.7a37d675.svg" alt="Web3 Saver" />
-          <Heading size="md">Web3 Saver</Heading>
+          <img height="50px" width="50px" src="/finivest.png" alt="finivest" />
+          <Heading size="md">finivest</Heading>
         </HStack>
         <HStack spacing={isUserConnected ? "4" : "2"}>
           {isUserConnected ? (
@@ -123,9 +123,6 @@ function Navbar() {
               >
                 {netwName}
               </Text>
-              <Button variant="outline" colorScheme="blue" onClick={getMwicpBalance}>
-                Get Balance
-              </Button>
               <HStack spacing="3">
                 <img
                   height="40px"
