@@ -13,29 +13,34 @@ import { idlFactory as dip20Idl } from "../src/declarations/mwicp";
 import { idlFactory as fitokenIdl } from "../src/declarations/fiwicp";
 
 // temp
-const canisterId = "";
 export const devEnv: "local" | "ic" = "local";
 export const appCanisters: {
+  // TODO: Merge with allTokenData
   [ticker: string]: {
     id: string;
     idl: any;
+    tokenDecimals: number;
   };
 } = {
   mWICP: {
     id: "ai7t5-aibaq-aaaaa-aaaaa-c",
     idl: dip20Idl,
+    tokenDecimals: 6,
   },
   fiWICP: {
     id: "l7jw7-difaq-aaaaa-aaaaa-c",
     idl: fitokenIdl,
+    tokenDecimals: 8,
   },
   mXTC: {
     id: "cvccv-qqaaq-aaaaa-aaaaa-c",
     idl: dip20Idl,
+    tokenDecimals: 8,
   },
   fiXTC: {
     id: "jcuhx-tqeaq-aaaaa-aaaaa-c",
     idl: fitokenIdl,
+    tokenDecimals: 8,
   },
 };
 // end temp

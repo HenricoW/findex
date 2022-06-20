@@ -7,7 +7,7 @@ import { TokenDispatchContext } from "../../../pages";
 import { Button } from "@chakra-ui/react";
 import WelcomeBlub from "./WelcomeBlub";
 import { ZERO_ADDR } from "../utils/initialData";
-import { getTknPrices, getUserDepositAmounts, getWalletBalances } from "../utils/helpers";
+import { getTknPrices, getUserAccAmounts, getWalletBalances } from "../utils/helpers";
 
 function AccSummary() {
   const { userData, userAmounts, isUserConnected, canisters } = useContext(AppContext);
@@ -17,7 +17,7 @@ function AccSummary() {
 
   useEffect(() => {
     (async () => {
-      if (canisters) {
+      if (Object.keys(canisters).length > 0) {
         if (userData.address !== ZERO_ADDR) {
           const payload = await getWalletBalances(userData.address, canisters);
           appDispatch({ type: "setWalletAmts", payload, target: "user" });
@@ -25,7 +25,7 @@ function AccSummary() {
 
         console.log("app wallet: ", userData.appWallet);
         if (userData.appWallet !== ZERO_ADDR) {
-          const payload = await getUserDepositAmounts(userData.appWallet, canisters);
+          const payload = await getUserAccAmounts(userData.appWallet, canisters);
           appDispatch({ type: "setAccAmts", payload, target: "user" });
         }
       }

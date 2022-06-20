@@ -1,7 +1,7 @@
 import { Principal } from "@dfinity/principal";
 import React, { createContext, useContext } from "react";
 import { appCanisters } from "../../../pages";
-import { getUserDepositAmounts, getWalletBalances } from "../utils/helpers";
+import { getUserAccAmounts, getWalletBalances } from "../utils/helpers";
 import { AppContext, AppDispatchContext } from "./Layout";
 
 export const PanelInputCtxt = createContext<(fieldAction: string, value: number) => Promise<void>>(async () => {});
@@ -13,7 +13,7 @@ function ContractActions({ children }: { children: React.ReactNode }) {
   const updateVals = async () => {
     if (canisters) {
       const payload = await getWalletBalances(userData.address, canisters);
-      const payload2 = await getUserDepositAmounts(userData.appWallet, canisters);
+      const payload2 = await getUserAccAmounts(userData.appWallet, canisters);
       appDispatch({ type: "setWalletAmts", payload, target: "user" }); // trigger app-wide reload
       appDispatch({ type: "setAccAmts", payload: payload2, target: "user" });
     }

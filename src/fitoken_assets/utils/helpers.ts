@@ -1,4 +1,5 @@
 import { ActorSubclass } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 import { appCanisters } from "../../../pages";
 import { allTokenData } from "./initialData";
 import { configInputType, tokenDataType, tokenValues } from "./types";
@@ -7,34 +8,48 @@ export const collWarnRate = 0.75;
 
 export const shortAddress = (addr: string) => addr.slice(0, 6) + "..." + addr.slice(-5);
 
-// temp
-export const getWalletBalances = async (addr: string, contracts: { [name: string]: any }) => {
+export const getWalletBalances = async (addr: string, canisters: { [name: string]: any }) => {
   const wallVals: { [tckr: string]: number } = {};
-  const tickers = getTickerList();
+  const tickers = Object.keys(appCanisters).filter((tckr) => !tckr.startsWith("fi"));
 
-  // TODO: get user wallet balances
+  let balances = [];
+  if (Object.keys(canisters).length > 0)
+    balances = await Promise.all(tickers.map((ticker) => canisters[ticker].balanceOf(Principal.fromText(addr))));
 
-  for (let i = 0; i < tickers.length; i++) {
-    wallVals[tickers[i]] = 30 + 7 * i;
-  }
-  console.log("wallVals: ", wallVals);
+  for (let i = 0; i < tickers.length; i++)
+    wallVals[tickers[i]] = Number(balances[i]) / Math.pow(10, appCanisters[tickers[i]].tokenDecimals);
 
   return { wallet: wallVals };
 };
 
-export const getUserDepositAmounts = async (accAddr: string, contracts: { [name: string]: any }) => {
+// temp
+export const getUserAccAmounts = async (accAddr: string, canisters: { [name: string]: any }) => {
   const deposits: { [tckr: string]: number } = {};
   const borrowed: { [tckr: string]: number } = {};
-  const tickers = getTickerList();
+  // const tickers = getTickerList();
+  const tickers = Object.keys(appCanisters).filter((tckr) => tckr.startsWith("fi"));
 
   // TODO: get user balances
+  let snapshots = [];
+  if (Object.keys(canisters).length > 0) {
+    snapshots = await Promise.all(
+      tickers.map((ticker) => canisters[ticker].getAccountSnapshot(Principal.fromText(accAddr)))
+    );
+  }
 
   for (let i = 0; i < tickers.length; i++) {
-    deposits[tickers[i]] = 50 + 7 * i;
-    borrowed[tickers[i]] = 20 + 8 * i;
+    const uTicker = tickers[i].replace("fi", "m"); // <====================== NOTE! for mock tokens
+    const uDecimals = appCanisters[uTicker].tokenDecimals;
+
+    const fibal = Number(snapshots[i][0]) / Math.pow(10, 8);
+    const borrowbal = Number(snapshots[i][1]) / Math.pow(10, uDecimals);
+    const exchRate = Number(snapshots[i][2]) / Math.pow(10, 6);
+
+    // deposits[tickers[i]] = fibal * exchRate;
+    deposits[uTicker] = fibal * exchRate; // <====================== NOTE! for mock tokens
+    // borrowed[tickers[i]] = borrowbal;
+    borrowed[uTicker] = borrowbal; // <====================== NOTE! for mock tokens
   }
-  console.log("deposits: ", deposits);
-  console.log("borrowed: ", borrowed);
 
   return { deposits, borrowed };
 };
@@ -109,7 +124,6 @@ export const inputDispatchConfig: {
 export const getTokenRates = async (canisters: { [ticker: string]: ActorSubclass }) => {
   // get only fitoken actors
   const tickers = Object.keys(appCanisters).filter((tckr) => tckr.startsWith("fi"));
-  console.log(canisters);
 
   // fetch per min rates
   let sRatesPerMin: number[] = [],
@@ -130,8 +144,6 @@ export const getTokenRates = async (canisters: { [ticker: string]: ActorSubclass
     supplyRates = ratesAPY.slice(0, ratesAPY.length / 2);
     borrowRates = ratesAPY.slice(ratesAPY.length / 2);
   }
-
-  console.log({ supply: supplyRates, borrow: borrowRates });
 
   return { supply: supplyRates, borrow: borrowRates };
 };
