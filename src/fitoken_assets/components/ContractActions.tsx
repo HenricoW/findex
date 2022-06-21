@@ -27,6 +27,7 @@ function ContractActions({ children }: { children: React.ReactNode }) {
       const fiticker = tckr.startsWith("m") ? tckr.replace("m", "fi") : `fi${tckr}`; // NOTE: for mock and actual tokens
       const fiTokenAddr = appCanisters[fiticker].id;
       const fiToken = canisters[fiticker];
+      const ftrl = canisters["fitroller"];
 
       console.log("field action: ", fieldAction);
       const value = val * Math.pow(10, appCanisters[tckr].tokenDecimals);
@@ -42,13 +43,18 @@ function ContractActions({ children }: { children: React.ReactNode }) {
           fiToken.redeem(value).then((resp) => console.log(resp));
           break;
         case "borrow":
-          fiToken.borrow(value).then((resp) => console.log(resp));
+          ftrl
+            .enterMarkets([Principal.fromText(fiTokenAddr)])
+            .then((resp) => {
+              console.log(resp);
+              return fiToken.borrow(value);
+            })
+            .then((resp) => console.log(resp));
           break;
         case "repay":
           console.log("submit value", value);
           uToken.approve(Principal.fromText(fiTokenAddr), 100 * value).then((resp) => {
             console.log(resp);
-            // fiToken.repay(value).then((resp) => console.log(resp));
             fiToken.repayBehalf(Principal.fromText(userData.appWallet), value).then((resp) => console.log(resp));
           });
           break;

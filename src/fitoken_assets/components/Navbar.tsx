@@ -7,12 +7,7 @@ import { AppContext, AppDispatchContext } from "./Layout";
 import { Principal } from "@dfinity/principal";
 import { Actor, ActorSubclass, HttpAgent } from "@dfinity/agent";
 import { Secp256k1KeyIdentity } from "@dfinity/identity";
-import { appCanisters, devEnv } from "../../../pages";
-
-// temp
-// const whitelist = [mwicp];
-const alicePrinc = Principal.fromText("oj5h2-fpzeg-dzqv5-7h5y4-huhtb-pp34d-36hyt-lowk6-cy3xz-lfnq2-7ae");
-// end temp
+import { appCanisters, devEnv, fitrollerCanister } from "../../../pages";
 
 function Navbar() {
   const { isUserConnected, userData } = useContext(AppContext);
@@ -32,7 +27,7 @@ function Navbar() {
   const getCanisters = (agent: HttpAgent) => {
     console.log("Setting up canisters...");
     let canisters: { [ticker: string]: ActorSubclass } = {};
-    for (let [ticker, canData] of Object.entries(appCanisters)) {
+    for (let [ticker, canData] of Object.entries({ ...appCanisters, fitroller: fitrollerCanister })) {
       canisters[ticker] = Actor.createActor(canData.idl, {
         agent,
         canisterId: canData.id,

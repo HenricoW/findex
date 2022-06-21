@@ -172,7 +172,7 @@ shared(msg) actor class Fitroller() : async FiTrollerMod.Interface {
             let collateralFactor = market.collateralFactorMantissa;
 
             // call oracle to get icp price of underlying token
-            let priceInICP = 1_728_000_000; // 17.28 ICP
+            let priceInICP = 100_000_000; // 1.00 ICP                               // TODO: to be fixed
 
             // This assets collateral contribution:
             // fitoken balance * exch rate * price in ICP * collateral factor

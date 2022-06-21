@@ -14,6 +14,11 @@ import { idlFactory as fitokenIdl } from "../src/declarations/fiwicp";
 
 // temp
 export const devEnv: "local" | "ic" = "local";
+export const fitrollerCanister = {
+  id: "fterm-bydaq-aaaaa-aaaaa-c",
+  idl: fitrollIdl,
+  tokenDecimals: 0,
+};
 export const appCanisters: {
   // TODO: Merge with allTokenData
   [ticker: string]: {
