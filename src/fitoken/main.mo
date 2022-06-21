@@ -60,7 +60,8 @@ shared(msg) actor class FiToken(
     };
     
     private stable var txcounter: Nat = 0;
-    // private var cap: ?Cap.Cap = null;
+
+    // private var cap: ?Cap.Cap = null;                        // NOTE: WILL ADD TRANSACTION RECORDING BACK LATER
     // private func addRecord(
     //     caller: Principal,
     //     op: Text, 
@@ -84,7 +85,6 @@ shared(msg) actor class FiToken(
     /*
     *   Core interfaces:
     */
-
     private func processReceipt(rcpt: Types.TxReceipt) : Types.TxReceipt {
         switch(rcpt){
             case (#Err err) { return #Err(err) };
@@ -166,9 +166,8 @@ shared(msg) actor class FiToken(
         getSupplyRate : shared (cash: Nat, borrows: Nat, reserves: Nat, reserveFactorMantissa: Nat) -> async Nat;
     };
 
-    // mintfi - TODO: incomplete
+    // mintfi
     public shared(msg) func mintfi(uAmount: Nat): async Types.TxReceipt {
-      // check if mint allowed { main pj cannister }
         let allowedRx = await ftrlr.mintAllowed(Principal.fromActor(this), msg.caller, uAmount);
         switch(allowedRx) {
             case(#Ok val) { };
@@ -208,18 +207,17 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    // redeem - TODO: incomplete
+    // redeem
     public shared(msg) func redeem(uAmount: Nat): async Types.TxReceipt {
-      // check if redeem allowed { main pj cannister }
         let allowedRx = await ftrlr.redeemAllowed(Principal.fromActor(this), msg.caller, uAmount);
         switch(allowedRx) {
             case(#Ok val) { };
             case(#Err errType)  { return #Err(errType) };
         };
 
-      // not needed but extra safety check
-      let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
-      if(uAmount > canisterBal) { return #Err(#InvalidAmount) };
+        // not needed but extra safety check
+        let canisterBal = await uToken.balanceOf(Principal.fromActor(this));
+        if(uAmount > canisterBal) { return #Err(#InvalidAmount) };
       
         // accrue interest
         let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
@@ -230,17 +228,17 @@ shared(msg) actor class FiToken(
             case(#Err errType)  { return #Err(errType) };
         };
 
-      let fiAmount = uAmount * fiTkn.ONE / exchRate;
-      let fi_balance = fiTkn._balanceOf(msg.caller);
-      if(fiAmount > fi_balance) { return #Err(#InsufficientBalance) };
-      
-      let transferRx = await uToken.transfer(msg.caller, uAmount);
+        let fiAmount = uAmount * fiTkn.ONE / exchRate;
+        let fi_balance = fiTkn._balanceOf(msg.caller);
+        if(fiAmount > fi_balance) { return #Err(#InsufficientBalance) };
+        
+        let transferRx = await uToken.transfer(msg.caller, uAmount);
         switch(transferRx) {
             case(#Ok val)   { };
             case(#Err errType)  { return #Err(errType) };
         };
 
-      fiTkn.cdata.totalSupply_ -= fiAmount;
+        fiTkn.cdata.totalSupply_ -= fiAmount;
         fiTkn.cdata.balances.put(msg.caller, fi_balance - fiAmount);
 
         // ignore addRecord(
@@ -256,9 +254,8 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    // borrow - TODO: incomplete
+    // borrow
     public shared(msg) func borrow(uAmount: Nat): async Types.TxReceipt {
-        // check if borrow allowed { main pj cannister }
         let allowedRx = await ftrlr.borrowAllowed(Principal.fromActor(this), msg.caller, uAmount);
         switch(allowedRx) {
             case(#Ok val) { };
@@ -271,12 +268,7 @@ shared(msg) actor class FiToken(
         
         // accrue interest
         let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
-        // switch(accrueRx) {
-        //     case(#Ok val) { };
-        //     case(#Err errType)  { return #Err(errType) };
-        // };
 
-        // transfer out
         let transferRx = await uToken.transfer(msg.caller, uAmount);            // re-entrancy risk???
         switch(transferRx) {
             case(#Ok val) { };
@@ -304,12 +296,11 @@ shared(msg) actor class FiToken(
         return #Ok(txcounter - 1);
     };
 
-    // repay - TODO: incomplete
+    // repay
     public shared(msg) func repayBehalf(borrower: Principal, uAmount: Nat): async Types.TxReceipt {
         // accrue interest
         let accrueRx = await accrueInterest();                                  // current error cond's in accrueInterest are not critical
 
-        // check if repay allowed { main pj cannister }
         let allowedRx = await ftrlr.repayAllowed(Principal.fromActor(this), msg.caller, borrower, uAmount);
         switch(allowedRx) {
             case(#Ok val) { };
@@ -326,7 +317,6 @@ shared(msg) actor class FiToken(
         // if uAmount > updated borrow bal, transfer only amount needed
         let repayVal = if(uAmount >= principal_j) { principal_j } else { uAmount };
 
-        // do transfer
         let transferRx = await uToken.transferFrom(msg.caller, Principal.fromActor(this), repayVal);
         switch(transferRx) {
             case(#Ok val) { };
@@ -349,6 +339,24 @@ shared(msg) actor class FiToken(
         };
     };
 
+    // TODO: incomplete
+    public shared(msg) func liquidate(borrower: Principal, uAmount: Nat, collFiToken: Principal): async Types.TxReceipt {
+        // is this and the collateral market the same?
+
+        // get reference to other token (may be of same/different market)
+
+        // update interest on both markets
+
+        // is liquidation allowed?
+
+        // is liquidation being done by the borrower?
+
+        // do repay on behalf
+
+        
+        #Ok(0)
+    };
+
     // get user's up to date fitoken bal, borrow bal & exch rate
     public func getAccountSnapshot(user: Principal): async (Nat, Nat, Nat) {
         let fiBalance = switch(fiTkn.cdata.balances.get(user)){
@@ -361,7 +369,6 @@ shared(msg) actor class FiToken(
             case(#Ok principal) { principal };
             case(#Err errType) { 0 };
         };
-        if(fiBalance == 0) assert(borrowBal == 0);
         
         let exchRateRx = await getExchangeRate();
         let exchRate = switch(exchRateRx){
@@ -397,7 +404,7 @@ shared(msg) actor class FiToken(
         let timeDiffMins = Int.abs(Time.now() - fiTkn.cdata.accrualTime) / oneMinNat;                                       // underflow possible, but already checked
 
         // get current parameters
-        let cash_i = await uToken.balanceOf(Principal.fromActor(this));                             // TODO: may need to update this
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));
         let supply_i = fiTkn.cdata.totalSupply_;
         let borrows_i = fiTkn.cdata.totalBorrows_;
         let reserves_i = fiTkn.cdata.totalReserves_;
@@ -408,7 +415,6 @@ shared(msg) actor class FiToken(
         // if underlying uses < 8 decimals, the following accInterest calc will yield 0 (smaller than 8 dec definition of ONE)
         // thus, another test is needed to not artificially move accrual time forward
         let accInterest = borrows_i * borrowRateMantissa * timeDiffMins / fiTkn.ONE;
-        // if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
         if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
 
         // update accrual time, borrow, reserves and index values
@@ -437,7 +443,6 @@ shared(msg) actor class FiToken(
 
     // get borrow rate (per minute)
     public func getBorrowRatePerMin(): async Nat {
-        // get current parameters
         let cash_i = await uToken.balanceOf(Principal.fromActor(this));
         let borrows_i = fiTkn.cdata.totalBorrows_;
         let reserves_i = fiTkn.cdata.totalReserves_;
@@ -448,7 +453,6 @@ shared(msg) actor class FiToken(
 
     // get supply rate (per minute)
     public func getSupplyRatePerMin(): async Nat {
-        // get current parameters
         let cash_i = await uToken.balanceOf(Principal.fromActor(this));
         let borrows_i = fiTkn.cdata.totalBorrows_;
         let reserves_i = fiTkn.cdata.totalReserves_;
@@ -457,8 +461,6 @@ shared(msg) actor class FiToken(
         let supplyRateMantissa = await interestRateModel.getSupplyRate(cash_i, borrows_i, reserves_i, resFactor);
         supplyRateMantissa
     };
-
-    // get borrow balance internal
 
     public query func logo() : async Text { fiTkn.cdata.logo_ };
     public query func name() : async Text { fiTkn.cdata.name_ };
@@ -477,7 +479,7 @@ shared(msg) actor class FiToken(
     // FOR TESTING ONLY
     public func accrueInterestTest(mins: Nat): async Types.TxReceipt {
         // get current parameters
-        let cash_i = await uToken.balanceOf(Principal.fromActor(this));                             // TODO: may need to update this
+        let cash_i = await uToken.balanceOf(Principal.fromActor(this));
         let supply_i = fiTkn.cdata.totalSupply_;
         let borrows_i = fiTkn.cdata.totalBorrows_;
         let reserves_i = fiTkn.cdata.totalReserves_;
@@ -488,7 +490,6 @@ shared(msg) actor class FiToken(
         // if underlying uses < 8 decimals, the following accInterest calc will yield 0 (smaller than 8 dec definition of ONE)
         // thus, another test is needed to not artificially move accrual time forward
         let accInterest = borrows_i * borrowRateMantissa * mins / fiTkn.ONE;
-        // if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
         if(accInterest == 0) { return #Err(#Other("Accumulation too small")) };
 
         // update accrual time, borrow, reserves and index values

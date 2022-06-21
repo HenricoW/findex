@@ -70,7 +70,7 @@ function PanelInputGroup({ panelType, fieldsDispatch }: PanelInputGroupProps) {
       <>
         <Box d="flex" alignItems="center" justifyContent="space-between">
           <FormLabel>{fieldConfig[pos].title}</FormLabel>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="gray.400">
             {fieldConfig[pos].helperText}: {fieldConfig[pos].helperAmount + " " + selectedToken.ticker}
           </Text>
         </Box>
