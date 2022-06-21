@@ -131,8 +131,8 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Button variant="outline" colorScheme="twitter" onClick={plugSignIn}>
-                CONNECT
+              <Button variant="outline" colorScheme="twitter" onClick={() => plugSignIn()}>
+                Connect Demo
               </Button>
             </>
           )}

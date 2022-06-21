@@ -72,8 +72,8 @@ echo == Install canisters
 echo
 
 HOME=$ALICE_HOME
-eval dfx canister install mxtc --argument="'(\"Mock XTC Logo\", \"Mock XTC\", \"mXTC\", 6, "1_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
-eval dfx canister install mwicp --argument="'(\"Mock WICP Logo\", \"Mock WICP\", \"mWICP\", 6, "2_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
+eval dfx canister install mxtc --argument="'(\"Mock XTC Logo\", \"Mock XTC\", \"mXTC\", 6, "3_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
+eval dfx canister install mwicp --argument="'(\"Mock WICP Logo\", \"Mock WICP\", \"mWICP\", 6, "3_000_000_000", $ALICE_PUBLIC_KEY, 0)'"
 eval dfx canister install interestRate --argument="'(6.0, 24.0)'"
 eval dfx canister install fitroller
 eval dfx canister install fixtc --argument="'(\"fiXTC Logo\", \"Finitrade XTC\", \"fiXTC\", 8, $ALICE_PUBLIC_KEY, \"$MXTCID_TEXT\", \"$FITROLLER_TEXT\", "110_000_000", \"$IRATEID_TEXT\", 0)'"
@@ -88,23 +88,26 @@ echo Verifying fee update
 dfx canister call fixtc getTokenFee
 eval dfx canister call mxtc transfer "'($FEE_PUBLIC_KEY, 500_000_000)'"
 echo
-echo == Alice transfers some of each token to EOA
+echo == Alice transfers some of each token to each of the demo EOAs \(\"User 1\" and \"User 2\" in the front-end\)
 eval dfx canister call mxtc transfer "'(principal \"h4ln2-qsfaz-na6by-g6fu6-vizab-bvlnv-h3hdq-5yjr3-vgwvt-bh5ka-tqe\", 500_000_000)'"
 eval dfx canister call mwicp transfer "'(principal \"h4ln2-qsfaz-na6by-g6fu6-vizab-bvlnv-h3hdq-5yjr3-vgwvt-bh5ka-tqe\", 1_000_000_000)'"
+echo
+echo == Alice transfers 300 xtc to the fee holder
+eval dfx canister call mxtc transfer "'($FEE_PUBLIC_KEY, 300_000_000)'"
 
 echo
 echo == Initial token balances for Alice and fixtc balance for fee taker
 echo Alice uToken Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
-echo Alice FiToken Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiXTC Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo FeeTo uToken Bal = $(eval dfx canister call mxtc balanceOf "'($FEE_PUBLIC_KEY)'")
-echo FeeTo FiToken Bal = $(eval dfx canister call fixtc balanceOf "'($FEE_PUBLIC_KEY)'")
+echo FeeTo FiXTC Bal = $(eval dfx canister call fixtc balanceOf "'($FEE_PUBLIC_KEY)'")
 
 echo
 echo
 echo
 echo ===================== FiTroller functions =====================
 echo
-echo == Add an FiToken to the supported markets, should succeed.
+echo == Add an FiXTC to the supported markets, should succeed.
 eval dfx canister call fitroller _supportMarket "'($FIXTCID)'"
 eval dfx canister call fitroller _supportMarket "'($FIWICPID)'"
 echo
@@ -114,26 +117,31 @@ echo
 echo
 echo ===================== Supply tests =====================
 echo
-echo == Alice grants FiToken permission to spend 500 of her mxtcs, should succeed.
-eval dfx canister call mxtc approve "'($FIXTCID, 500_000_000)'"
-echo == Alice mints fixtcs \(exchanging 400 mxtcs\), should succeed.
-eval dfx canister call fixtc mintfi "400_000_000"
+echo == Alice grants FiXTC permission to spend 1000 of her mxtc and mwicp, should succeed.
+eval dfx canister call mxtc approve "'($FIXTCID, 1_000_000_000)'"
+eval dfx canister call mwicp approve "'($FIWICPID, 1_500_000_000)'"
+echo == Alice mints fixtcs \(exchanging 1000 mxtcs\), should succeed.
+eval dfx canister call fixtc mintfi "1_000_000_000"
+eval dfx canister call fiwicp mintfi "1_500_000_000"
 echo
 HOME=$FEE_HOME
-echo == Fee holder grants FiToken permission to spend 300 mxtcs, should succeed.
-eval dfx canister call mxtc approve "'($FIXTCID, 300_000_000)'"
+echo == Fee holder grants FiToken permission to spend 250 mxtcs, should succeed.
+eval dfx canister call mxtc approve "'($FIXTCID, 250_000_000)'"
 echo == Fee holder mints fixtcs \(exchanging 200 mxtcs\), should succeed.
 eval dfx canister call fixtc mintfi "200_000_000"
 echo
 
 echo New balances:
-echo Alice uToken Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
-echo Alice FiToken Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
-echo Fee holder uToken Bal = $(eval dfx canister call mxtc balanceOf "'($FEE_PUBLIC_KEY)'")
-echo Fee holder FiToken Bal = $(eval dfx canister call fixtc balanceOf "'($FEE_PUBLIC_KEY)'")
+echo Alice mxtc Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiXTC Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice mwicp Bal = $(eval dfx canister call mwicp balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiWICP Bal = $(eval dfx canister call fiwicp balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo
-echo FiToken canister uToken Bal = $(eval dfx canister call mxtc balanceOf "'($FIXTCID)'")
-echo FiToken Total Supply = $(eval dfx canister call fixtc totalSupply)
+echo Fee holder mxtc Bal = $(eval dfx canister call mxtc balanceOf "'($FEE_PUBLIC_KEY)'")
+echo Fee holder FiXTC Bal = $(eval dfx canister call fixtc balanceOf "'($FEE_PUBLIC_KEY)'")
+echo
+echo FiXTC canister mxtc Bal = $(eval dfx canister call mxtc balanceOf "'($FIXTCID)'")
+echo FiXTC Total Supply = $(eval dfx canister call fixtc totalSupply)
 echo
 
 echo
@@ -148,18 +156,18 @@ echo
 
 echo New balances:
 echo Alice uToken Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
-echo Alice FiToken Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
+echo Alice FiXTC Bal = $(eval dfx canister call fixtc balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo
-echo FiToken canister uToken Bal = $(eval dfx canister call mxtc balanceOf "'($FIXTCID)'")
-echo FiToken Total Supply = $(eval dfx canister call fixtc totalSupply)
+echo FiXTC canister uToken Bal = $(eval dfx canister call mxtc balanceOf "'($FIXTCID)'")
+echo FiXTC Total Supply = $(eval dfx canister call fixtc totalSupply)
 echo
 
 echo
 echo == Alice tries to redeem more than the platform\'s balance \(5000 mxtcs\), should not succeed.
 eval dfx canister call fixtc redeem "5_000_000_000"
 echo
-echo == Alice tries to redeem more she has left \(305 mxtcs\), should not succeed.
-eval dfx canister call fixtc redeem "305_000_000"
+echo == Alice tries to redeem more she has left \(3500 mxtcs\), should not succeed.
+eval dfx canister call fixtc redeem "3_500_000_000"
 echo
 
 echo
@@ -173,8 +181,9 @@ echo == Fitoken exchange rate = $(dfx canister call fixtc getExchangeRate)
 echo
 echo == Get Alice\'s account liquidity.
 eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FIXTCID, 0, 0)'"
-echo == Alice borrows 200 mxtcs.
-eval dfx canister call fixtc borrow "200_000_000"
+echo
+echo == Alice borrows 100 mxtcs.
+eval dfx canister call fixtc borrow "100_000_000"
 echo
 # echo == Accrue interest.
 # eval dfx canister call fixtc accrueInterest
@@ -186,11 +195,11 @@ echo
 echo == Get Alice\'s account liquidity.
 eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FIXTCID, 0, 0)'"
 echo
-echo == Alice tries to REDEEM more than her liquidity allows \(70 mxtcs\), should not succeed.
-eval dfx canister call fixtc redeem "70_000_000"
+echo == Alice tries to REDEEM more than her liquidity allows \(800 mxtcs\), should not succeed.
+eval dfx canister call fixtc redeem "800_000_000"
 echo
-echo == Alice tries to BORROW more than her liquidity allows \(70 mxtcs\), should not succeed.
-eval dfx canister call fixtc borrow "70_000_000"
+echo == Alice tries to BORROW more than her liquidity allows \(800 mxtcs\), should not succeed.
+eval dfx canister call fixtc borrow "800_000_000"
 echo
 
 echo
@@ -219,8 +228,9 @@ echo == Get Alice\'s account liquidity.
 eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FIXTCID, 0, 0)'"
 echo Alice uToken Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo
-echo == Alice repays 20 mxtcs.
-eval dfx canister call fixtc repayBehalf "'($ALICE_PUBLIC_KEY, 20_000_000)'"
+echo == Alice repays 50 mxtcs.
+eval dfx canister call mxtc approve "'($FIXTCID, 50_000_000)'"
+eval dfx canister call fixtc repayBehalf "'($ALICE_PUBLIC_KEY, 50_000_000)'"
 echo
 echo Alice uToken Bal = $(eval dfx canister call mxtc balanceOf "'($ALICE_PUBLIC_KEY)'")
 echo == Fitoken total Liquidity values \(supply, borrows, reserves, interestIndex\).
@@ -230,9 +240,6 @@ echo
 echo == Get Alice\'s account liquidity.
 eval dfx canister call fitroller getHypotheticalLiquidity "'($ALICE_PUBLIC_KEY, $FIXTCID, 0, 0)'"
 echo
-
-
-
 
 
 
@@ -268,77 +275,5 @@ echo
 # echo == historySize
 # echo
 # eval dfx canister call mxtc historySize
-
-# echo
-# echo == getTransaction
-# echo
-# eval dfx canister call mxtc getTransaction "'(1)'"
-
-# echo
-# echo == getTransactions
-# echo
-# eval dfx canister call mxtc getTransactions "'(0,100)'" 
-
-# echo
-# echo == getUserTransactionAmount
-# echo
-# eval dfx canister  call mxtc getUserTransactionAmount "'($ALICE_PUBLIC_KEY)'" 
-
-# echo
-# echo == getUserTransactions
-# echo
-# eval dfx canister call mxtc getUserTransactions "'($ALICE_PUBLIC_KEY, 0, 1000)'"
-
-# echo
-# echo == getTokenInfo
-# echo
-# eval dfx canister  call mxtc getTokenInfo
-
-# echo
-# echo == getHolders
-# echo
-# eval dfx canister  call mxtc getHolders "'(0,100)'"
-
-# echo
-# echo == getAllowanceSize
-# echo
-# eval dfx canister  call mxtc getAllowanceSize
-
-# echo
-# echo == getUserApprovals
-# echo
-# eval dfx canister  call mxtc getUserApprovals "'($ALICE_PUBLIC_KEY)'"
-
-# echo
-# echo == get alice getUserTransactions
-# echo
-# eval dfx canister  call mxtc getUserTransactions "'($ALICE_PUBLIC_KEY, 0, 1000)'"
-
-# echo
-# echo == get fee History
-# echo
-# eval dfx canister  call mxtc getUserTransactions "'($FEE_PUBLIC_KEY, 0, 1000)'"
-
-
-# echo
-# echo == Upgrade mxtc
-# echo
-# HOME=$ALICE_HOME
-# eval dfx canister install mxtc --argument="'(\"test\", \"Test uToken\", \"TT\", 2, 100, $ALICE_PUBLIC_KEY)'" -m=upgrade
-
-# echo
-# echo == all History
-# echo
-# eval dfx canister call mxtc getTransactions "'(0, 1000)'"
-
-# echo
-# echo == getTokenInfo
-# echo
-# dfx canister call mxtc getTokenInfo
-
-# echo
-# echo == get alice History
-# echo
-# eval dfx canister  call mxtc getUserTransactions "'($ALICE_PUBLIC_KEY, 0, 1000)'"
 
 # dfx stop

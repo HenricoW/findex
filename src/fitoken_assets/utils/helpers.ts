@@ -32,9 +32,18 @@ export const getUserAccAmounts = async (accAddr: string, canisters: { [name: str
   // TODO: get user balances
   let snapshots = [];
   if (Object.keys(canisters).length > 0) {
-    snapshots = await Promise.all(
-      tickers.map((ticker) => canisters[ticker].getAccountSnapshot(Principal.fromText(accAddr)))
-    );
+    try {
+      snapshots = await Promise.all(
+        tickers.map((ticker) => canisters[ticker].getAccountSnapshot(Principal.fromText(accAddr)))
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  if (snapshots.length < 1) {
+    const zeros = Array(tickers.length).fill(0);
+    return { deposits: zeros, borrowed: zeros };
   }
 
   for (let i = 0; i < tickers.length; i++) {
@@ -75,7 +84,7 @@ export const getInputConfig = ({ panelType, userAmounts, decimals, price }: conf
         btnColor: "green",
         top: {
           title: "Deposit",
-          helperText: "Your Account",
+          helperText: "Your Wallet",
           helperAmount: userAmounts.walletAmount,
           ethRequest: "deposit",
         },

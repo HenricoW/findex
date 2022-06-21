@@ -15,21 +15,23 @@ function AccSummary() {
 
   const tknDataDispatch = useContext(TokenDispatchContext);
 
-  useEffect(() => {
-    (async () => {
-      if (Object.keys(canisters).length > 0) {
-        if (userData.address !== ZERO_ADDR) {
-          const payload = await getWalletBalances(userData.address, canisters);
-          appDispatch({ type: "setWalletAmts", payload, target: "user" });
-        }
-
-        console.log("app wallet: ", userData.appWallet);
-        if (userData.appWallet !== ZERO_ADDR) {
-          const payload = await getUserAccAmounts(userData.appWallet, canisters);
-          appDispatch({ type: "setAccAmts", payload, target: "user" });
-        }
+  const getUserVals = async () => {
+    if (Object.keys(canisters).length > 0) {
+      if (userData.address !== ZERO_ADDR) {
+        const payload = await getWalletBalances(userData.address, canisters);
+        appDispatch({ type: "setWalletAmts", payload, target: "user" });
       }
-    })();
+
+      console.log("app wallet: ", userData.appWallet);
+      if (userData.appWallet !== ZERO_ADDR) {
+        const payload = await getUserAccAmounts(userData.appWallet, canisters);
+        appDispatch({ type: "setAccAmts", payload, target: "user" });
+      }
+    }
+  };
+
+  useEffect(() => {
+    getUserVals();
   }, [canisters, userData.address, userData.appWallet]);
 
   useEffect(() => {
@@ -98,9 +100,12 @@ function AccSummary() {
                 <CircularProgress size="95px" thickness="15px" value={userCollateral} color="green.400" mb="2">
                   <CircularProgressLabel>{userCollateral.toFixed(0)}%</CircularProgressLabel>
                 </CircularProgress>
-                <Text fontSize="sm" color="gray.500">
+                <Text fontSize="sm" color="gray.500" mb=".5em">
                   Collateral Rate
                 </Text>
+                <Button variant="outline" colorScheme="twitter" onClick={getUserVals}>
+                  Refresh Values
+                </Button>
               </Box>
             )}
           </Box>
